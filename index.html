@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>C3P-0: Claude's CTF Code for Ptychography in the weak-phase limit</title>
+<style>
+:root{
+  color-scheme: light;
+  --bg:#f6f6f4; --panel:#ffffff; --ink:#1b1b1a; --ink2:#52514e; --muted:#8a8985; --line:#e2e1dc;
+  --accent:#2a78d6; --accent-ink:#ffffff; --warn:#b35c00;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif}
+header{padding:14px 20px 10px;border-bottom:1px solid var(--line);background:var(--panel)}
+header h1{font-size:19px;margin:0 0 2px;font-weight:650;letter-spacing:-.01em}
+header p{margin:0;color:var(--ink2);font-size:13px}
+.wrap{display:grid;grid-template-columns:300px minmax(0,1fr);gap:0;min-height:calc(100vh - 64px)}
+aside{background:var(--panel);border-right:1px solid var(--line);padding:12px 14px 40px;overflow-y:auto;max-height:calc(100vh - 64px);position:sticky;top:0}
+main{padding:14px 20px 60px;min-width:0}
+fieldset{border:none;padding:0;margin:0 0 14px}
+legend{font-weight:650;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink2);margin-bottom:6px;padding:0}
+.row{display:flex;align-items:center;gap:6px;margin:4px 0}
+.row label{flex:1 1 auto;font-size:13px;color:var(--ink)}
+.row .u{font-size:11px;color:var(--muted);width:30px}
+input[type=number],input[type=text],select{font:inherit;font-size:13px;padding:3px 5px;border:1px solid #cfcec8;border-radius:5px;background:#fff;color:var(--ink)}
+input[type=number]{width:72px}
+input.ang{width:52px}
+select{max-width:100%}
+.row select{max-width:190px}
+.ab{display:grid;grid-template-columns:30px minmax(0,1fr) 26px 54px 12px;gap:4px;align-items:center;margin:3px 0;font-size:13px}
+.ab input,.ab input.ang{width:100%}
+.ab .h{font-size:11px;color:var(--muted)}
+.info{font-size:12px;color:var(--ink2);background:#f3f3f0;border-radius:6px;padding:6px 8px;margin-top:6px;font-variant-numeric:tabular-nums}
+.warn{color:var(--warn)}
+section.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px 14px;margin-bottom:16px}
+section.card h2{font-size:15px;margin:0 0 2px;font-weight:650}
+section.card .sub{font-size:12.5px;color:var(--ink2);margin:0 0 8px}
+.ctl{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin-bottom:8px;font-size:13px}
+.ctl input[type=text]{width:260px}
+.figbox{position:relative;overflow-x:auto}
+canvas.fig{display:block;max-width:100%;height:auto;cursor:crosshair}
+.btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+button{font:inherit;font-size:12.5px;padding:4px 10px;border-radius:6px;border:1px solid #cfcec8;background:#fff;color:var(--ink);cursor:pointer}
+button:hover{background:#f0f0ec}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.combo{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start}
+.legendtoggles{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12.5px}
+.legendtoggles label{display:flex;align-items:center;gap:4px}
+.sw{display:inline-block;width:18px;height:3px;border-radius:2px}
+#tip{position:fixed;pointer-events:none;background:rgba(27,27,26,.93);color:#fff;font-size:12px;line-height:1.4;padding:6px 8px;border-radius:6px;z-index:50;display:none;white-space:nowrap;font-variant-numeric:tabular-nums;max-width:420px}
+.xh{position:absolute;top:0;width:1px;background:rgba(0,0,0,.35);pointer-events:none;display:none}
+.status{font-size:12px;color:var(--ink2);min-height:16px}
+.progress{height:3px;background:#e9e8e3;border-radius:2px;overflow:hidden;width:200px;display:inline-block;vertical-align:middle}
+.progress>div{height:100%;width:0;background:var(--accent);transition:width .1s}
+details.theory{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 14px}
+details.theory summary{font-weight:650;cursor:pointer}
+.theory p,.theory li{font-size:13.5px;max-width:880px}
+.eq{font-family:"Cambria Math","STIX Two Math","Times New Roman",serif;font-size:15px;background:#f5f5f2;padding:6px 10px;border-radius:6px;display:block;margin:6px 0;overflow-x:auto;white-space:nowrap}
+.v{font-family:"Cambria Math","STIX Two Math","Times New Roman",serif;font-style:italic}
+#modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:100}
+#modal .box{background:#fff;border-radius:10px;padding:14px;max-width:92vw;max-height:92vh;overflow:auto;box-shadow:0 10px 40px rgba(0,0,0,.25)}
+#modal img{max-width:86vw;max-height:66vh;display:block;border:1px solid var(--line);margin:8px 0;background:#fff}
+#modal textarea{width:80vw;height:50vh;font:12px ui-monospace,Menlo,monospace}
+.hint{font-size:12px;color:var(--ink2)}
+@media (max-width:900px){.wrap{grid-template-columns:1fr}aside{position:static;max-height:none;border-right:none;border-bottom:1px solid var(--line)}}
+</style>
+</head>
+<body>
+<header>
+  <h1>C3P-0 <span style="font-weight:450;color:var(--ink2);font-size:15px">Claude's CTF Code for Ptychography in the weak-phase limit</span></h1>
+  <div style="float:right;margin-top:4px"><button class="primary" id="pdfAll">Export all figures (PDF)</button></div>
+  <p>Weak-phase transfer function <span class="v">T</span>(<span class="v">K</span><sub>f</sub>, <span class="v">Q</span><sub>p</sub>) of 4D-STEM data, sliced in detector space and in virtual-bright-field space. Hover to read values; click a panel to add a point to the other series.</p>
+</header>
+<div class="wrap">
+<aside>
+  <fieldset>
+    <legend>Optics</legend>
+    <div class="row"><label for="kV">Beam energy</label><input type="number" id="kV" value="300" step="10" min="10"><span class="u">kV</span></div>
+    <div class="row"><label for="alpha">Convergence semi-angle α</label><input type="number" id="alpha" value="21.4" step="0.5" min="0.5"><span class="u">mrad</span></div>
+    <div class="info" id="optInfo"></div>
+  </fieldset>
+  <fieldset>
+    <legend>Aberrations</legend>
+    <div class="row"><label for="preset">Preset</label>
+      <select id="preset">
+        <option value="">—</option>
+        <option value="focus">In focus, aberration-free</option>
+        <option value="u10" selected>Underfocus C1 = −10 nm</option>
+        <option value="u20">Underfocus C1 = −20 nm</option>
+        <option value="o10">Overfocus C1 = +10 nm</option>
+        <option value="scherzer">Uncorrected: C3 = 1.2 mm, Scherzer</option>
+        <option value="astig">2-fold astigmatism A1 = 5 nm</option>
+        <option value="coma">Axial coma B2 = 200 nm</option>
+        <option value="three">3-fold astigmatism A2 = 200 nm</option>
+      </select></div>
+    <div class="ab"><span class="h"></span><span class="h">magnitude</span><span class="h"></span><span class="h">angle</span><span></span></div>
+    <div class="ab"><b>C1</b><input type="number" id="C1" value="-10" step="1"><span class="u">nm</span><span></span><span></span></div>
+    <div class="ab"><b>A1</b><input type="number" id="A1" value="0" step="0.5"><span class="u">nm</span><input class="ang" type="number" id="A1a" value="0" step="5"><span class="u">°</span></div>
+    <div class="ab"><b>B2</b><input type="number" id="B2" value="0" step="10"><span class="u">nm</span><input class="ang" type="number" id="B2a" value="0" step="5"><span class="u">°</span></div>
+    <div class="ab"><b>A2</b><input type="number" id="A2" value="0" step="10"><span class="u">nm</span><input class="ang" type="number" id="A2a" value="0" step="5"><span class="u">°</span></div>
+    <div class="ab"><b>C3</b><input type="number" id="C3" value="0" step="1"><span class="u">µm</span><span></span><span></span></div>
+    <div class="ab"><b>A3</b><input type="number" id="A3" value="0" step="1"><span class="u">µm</span><input class="ang" type="number" id="A3a" value="0" step="5"><span class="u">°</span></div>
+    <div class="ab"><b>C5</b><input type="number" id="C5" value="0" step="0.5"><span class="u">mm</span><span></span><span></span></div>
+    <div class="hint">Krivanek notation. C1 &gt; 0 is overfocus. Angles in degrees from the +K<sub>x</sub> axis.</div>
+  </fieldset>
+  <fieldset>
+    <legend>Partial coherence</legend>
+    <div class="row"><label for="dfs">Focal spread (rms)</label><input type="number" id="dfs" value="0" step="0.5" min="0"><span class="u">nm</span></div>
+    <div class="row"><label for="src">Source size (FWHM)</label><input type="number" id="src" value="0" step="0.1" min="0"><span class="u">Å</span></div>
+    <div class="hint">Focal spread is a Gaussian defocus distribution, averaged exactly (analytic damping envelope on each term). The source size multiplies <span class="v">T</span> by a Gaussian envelope in <span class="v">Q</span><sub>p</sub>.</div>
+  </fieldset>
+  <fieldset>
+    <legend>Display</legend>
+    <div class="row"><label for="mode">Show</label>
+      <select id="mode">
+        <option value="clight" selected>Complex (hue = phase, white = 0)</option>
+        <option value="cdark">Complex (hue = phase, black = 0)</option>
+        <option value="re">Real part</option>
+        <option value="im">Imaginary part</option>
+        <option value="abs">Magnitude |T|</option>
+        <option value="arg">Phase arg T</option>
+      </select></div>
+    <div class="row"><label for="comp">Term</label>
+      <select id="comp">
+        <option value="0" selected>Full T</option>
+        <option value="1">+Q sideband: i A*(K)A(K−Q)</option>
+        <option value="2">−Q sideband: −i A(K)A*(K+Q)</option>
+      </select></div>
+    <div class="row"><label for="scale">Color scale</label>
+      <select id="scale"><option value="fixed" selected>Fixed, |T| ≤ 2</option><option value="auto">Auto (per row)</option></select></div>
+    <div class="row"><label for="units">Axis units</label>
+      <select id="units"><option value="kmax" selected>K<sub>max</sub></option><option value="mrad">mrad</option><option value="inv">Å⁻¹</option></select></div>
+    <div class="row"><label for="N">Samples per panel</label>
+      <select id="N"><option>128</option><option selected>200</option><option>300</option><option>400</option></select></div>
+    <div class="row"><label for="P">Panel size</label><input type="number" id="P" value="190" step="10" min="80"><span class="u">px</span></div>
+    <div class="row"><label for="cols">Panels per row</label><input type="number" id="cols" value="6" step="1" min="1" max="10"><span class="u"></span></div>
+    <div class="row"><label for="ovl">Disk outlines</label><input type="checkbox" id="ovl" checked><span class="u"></span></div>
+    <div class="row"><label for="ovlab">Outline labels</label><input type="checkbox" id="ovlab" checked><span class="u"></span></div>
+  </fieldset>
+</aside>
+
+<main>
+  <section class="card" id="secComb">
+    <h2>Noise-normalized CTF — what each reconstruction recovers from all pixels</h2>
+    <p class="sub">NN-CTF η(<span class="v">Q</span><sub>p</sub>) = |Σ w T| / √(N Σ|w|²), summed over the N pixels in the bright-field disk with pixel weights w. A shot-noise-limited image at fixed dose has SNR ∝ η. The ideal Zernike phase plate in TEM has η = 2, so DQE = η²/4 is the dose efficiency relative to that ideal.</p>
+    <div class="ctl">
+      <label>K-sampling <select id="M"><option value="16">16</option><option value="24">24</option><option value="32" selected>32</option><option value="48">48</option><option value="64">64</option><option value="128">128</option><option value="192">192</option><option value="256">256</option></select> px / K<sub>max</sub></label>
+      <label id="bfCtl">BF detector radius β <input type="number" id="bfR" value="0.3" step="0.05" min="0.02" max="1"> K<sub>max</sub></label>
+      <label id="abfCtl">ABF inner edge <input type="number" id="inner" value="0.5" step="0.05" min="0" max="0.95"> K<sub>max</sub></label>
+      <label>Profile <select id="prof"><option value="line">along line</option><option value="radial" selected>radial average</option></select></label>
+      <label>line angle <input class="ang" type="number" id="pang" value="0" step="15">°</label>
+    </div>
+    <div class="status"><span id="cstat"></span> <span class="progress"><div id="cprog"></div></span></div>
+    <div class="legendtoggles" id="ltog" style="margin:4px 0 6px"></div>
+    <div class="combo">
+      <div style="flex:1 1 520px;min-width:0">
+        <div class="figbox" id="plotbox"><canvas class="fig" id="cvPlot"></canvas><div id="xhair" class="xh"></div></div>
+        <div class="btns"><button data-exp="cvPlot" data-fmt="png">Export PNG</button><button data-exp="cvPlot" data-fmt="svg">Export SVG</button><button data-exp="cvPlot" data-fmt="pdf">Export PDF</button><button id="csv">Profiles as CSV</button></div>
+      </div>
+      <div style="flex:1 1 520px;min-width:0">
+        <div class="figbox" id="dqebox"><canvas class="fig" id="cvDqe"></canvas><div id="xhair2" class="xh"></div></div>
+        <div class="btns"><button data-exp="cvDqe" data-fmt="png">Export PNG</button><button data-exp="cvDqe" data-fmt="svg">Export SVG</button><button data-exp="cvDqe" data-fmt="pdf">Export PDF</button></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card" id="secMap">
+    <h2>2D NN-CTF η(<span class="v">Q</span><sub>p</sub>)</h2>
+    <p class="sub">The same noise-normalized transfer over the full <span class="v">Q</span><sub>p</sub> plane, which shows anisotropy from astigmatism, coma or a line profile's direction. Dashed circles are at <span class="v">K</span><sub>max</sub> and 2<span class="v">K</span><sub>max</sub>. Clicking the map adds that <span class="v">Q</span><sub>p</sub> to the detector-space series.</p>
+    <div class="ctl">
+      <label>Reconstruction <select id="cmap">
+        <option value="pm" selected>acBF (phase-matched)</option>
+        <option value="tc">Tilt-corrected BF (tcBF)</option>
+        <option value="com">iCoM / DPC</option>
+        <option value="bfRe">BF, signed</option>
+        <option value="bf">BF, magnitude</option>
+        <option value="abf">ABF (annular)</option>
+        <option value="sl">Self-luminous limit (acBF upper bound)</option>
+      </select></label>
+      <label>color scale <select id="cscale"><option value="auto" selected>auto</option><option value="fixed">fixed (0–2)</option></select></label>
+    </div>
+    <div class="figbox"><canvas class="fig" id="cvMap"></canvas></div>
+    <div class="btns"><button data-exp="cvMap" data-fmt="png">Export PNG</button><button data-exp="cvMap" data-fmt="svg">Export SVG</button><button data-exp="cvMap" data-fmt="pdf">Export PDF</button></div>
+  </section>
+
+  <section class="card" id="secDet">
+    <h2>Detector space — <span class="v">T</span>(<span class="v">K</span><sub>f</sub>) at fixed <span class="v">Q</span><sub>p</sub></h2>
+    <p class="sub">Each panel is one spatial frequency of the scan, shown across the detector. Only the bright-field disk contributes. Inside it, the double-overlap lunes with the disks shifted to ±<span class="v">Q</span><sub>p</sub> carry the signal; where all three disks overlap (triple overlap), both terms are present.</p>
+    <div class="ctl">
+      <label>Q<sub>p</sub> series (K<sub>max</sub>) <input type="text" id="qlist" value="0.25, 0.5, 1, 1.5"></label>
+      <label>direction <input class="ang" type="number" id="qang" value="0" step="15">°</label>
+      <button id="qclear">Clear</button>
+      <span class="hint">Enter magnitudes along the direction, or points such as (0.3, 0.2). Clicking a vBF panel adds a point here.</span>
+    </div>
+    <div class="figbox"><canvas class="fig" id="cvDet"></canvas></div>
+    <div class="btns"><button data-exp="cvDet" data-fmt="png">Export PNG</button><button data-exp="cvDet" data-fmt="svg">Export SVG</button><button data-exp="cvDet" data-fmt="pdf">Export PDF</button></div>
+  </section>
+
+  <section class="card" id="secVbf">
+    <h2>vBF space — <span class="v">T</span>(<span class="v">Q</span><sub>p</sub>) for fixed detector pixel <span class="v">K</span><sub>f</sub></h2>
+    <p class="sub">Each panel is the transfer function of one detector pixel's virtual bright-field image. The two sidebands are disks of radius <span class="v">K</span><sub>max</sub> centered at <span class="v">Q</span><sub>p</sub> = +<span class="v">K</span><sub>f</sub> and −<span class="v">K</span><sub>f</sub>. Each is single-sideband where only one disk is present and double-sideband where they overlap. At <span class="v">K</span><sub>f</sub> = 0 the panel is the conventional BF CTF, 2 sin χ.</p>
+    <div class="ctl">
+      <label>K<sub>f</sub> series (K<sub>max</sub>) <input type="text" id="klist" value="0, 0.5, 0.9"></label>
+      <label>direction <input class="ang" type="number" id="kang" value="0" step="15">°</label>
+      <button id="kclear">Clear</button>
+      <span class="hint">Clicking a detector-space panel adds a pixel here.</span>
+    </div>
+    <div class="figbox"><canvas class="fig" id="cvVbf"></canvas></div>
+    <div class="btns"><button data-exp="cvVbf" data-fmt="png">Export PNG</button><button data-exp="cvVbf" data-fmt="svg">Export SVG</button><button data-exp="cvVbf" data-fmt="pdf">Export PDF</button></div>
+  </section>
+
+  <details class="theory" open>
+    <summary>Theory and conventions</summary>
+    <p>The probe is <span class="eq">A(<b>K</b>) = A<sub>p</sub>(<b>K</b>) exp[−iχ(<b>K</b>)],&nbsp;&nbsp; A<sub>p</sub> = 1 for |<b>K</b>| ≤ K<sub>max</sub> = α/λ.</span>
+    Place it at <b>R</b><sub>p</sub> on a weak phase object, t(<b>r</b>) ≈ 1 + iσφ(<b>r</b>), and record the intensity I(<b>K</b><sub>f</sub>, <b>R</b><sub>p</sub>) on the detector. Fourier transforming over probe positions and keeping first order in σφ gives</p>
+    <span class="eq">G(<b>K</b><sub>f</sub>, <b>Q</b><sub>p</sub>) = ∫ I(<b>K</b><sub>f</sub>, <b>R</b><sub>p</sub>) e<sup>−2πi <b>Q</b><sub>p</sub>·<b>R</b><sub>p</sub></sup> d<b>R</b><sub>p</sub> = |A(<b>K</b><sub>f</sub>)|² δ(<b>Q</b><sub>p</sub>) + σ φ̃(<b>Q</b><sub>p</sub>) T(<b>K</b><sub>f</sub>, <b>Q</b><sub>p</sub>)</span>
+    <span class="eq">T(<b>K</b><sub>f</sub>, <b>Q</b><sub>p</sub>) = i [ A*(<b>K</b><sub>f</sub>) A(<b>K</b><sub>f</sub> − <b>Q</b><sub>p</sub>) − A(<b>K</b><sub>f</sub>) A*(<b>K</b><sub>f</sub> + <b>Q</b><sub>p</sub>) ]</span>
+    <p>This is the quantity plotted. Because φ is real, T(<b>K</b><sub>f</sub>, −<b>Q</b><sub>p</sub>) = T*(<b>K</b><sub>f</sub>, <b>Q</b><sub>p</sub>). |T| ≤ 2 everywhere.</p>
+    <ul>
+      <li><b>Detector space</b> (fixed <b>Q</b><sub>p</sub>, image over <b>K</b><sub>f</sub>): the first term lives in the overlap of the BF disk with the disk centered at +<b>Q</b><sub>p</sub>, the second in its overlap with the disk at −<b>Q</b><sub>p</sub>. These are the double-overlap regions. For |<b>Q</b><sub>p</sub>| &lt; K<sub>max</sub> the two shifted disks also overlap each other inside the BF disk (triple overlap). With no aberrations, the two lunes are equal and opposite, which is the in-focus single-sideband (SSB) picture.</li>
+      <li><b>vBF space</b> (fixed <b>K</b><sub>f</sub>, image over <b>Q</b><sub>p</sub>): the first term is nonzero for |<b>Q</b><sub>p</sub> − <b>K</b><sub>f</sub>| ≤ K<sub>max</sub> and the second for |<b>Q</b><sub>p</sub> + <b>K</b><sub>f</sub>| ≤ K<sub>max</sub>. These are the two sidebands of that pixel's image: single-sideband where one disk is present, double-sideband where both are. For <b>K</b><sub>f</sub> = 0 and centrosymmetric χ, T = 2 sin χ(<b>Q</b><sub>p</sub>), the conventional BF CTF.</li>
+      <li>To first order both terms carry the phase ∇χ(<b>K</b><sub>f</sub>)·<b>Q</b><sub>p</sub>, the same for each term. That is the real-space shift of each pixel's image that tcBF removes. The quadratic remainder is the CTF that tcBF leaves behind and that aberration-corrected BF (acBF) also corrects.</li>
+    </ul>
+    <p><b>Aberration function</b> (θ = λ|<b>K</b>|, φ its azimuth):</p>
+    <span class="eq">χ = (2π/λ) [ ½C1θ² + ½A1θ²cos 2(φ−φ<sub>A1</sub>) + ⅓B2θ³cos(φ−φ<sub>B2</sub>) + ⅓A2θ³cos 3(φ−φ<sub>A2</sub>) + ¼C3θ⁴ + ¼A3θ⁴cos 4(φ−φ<sub>A3</sub>) + ⅙C5θ⁶ ]</span>
+    <p><b>Combined transfer.</b> For pixel weights w(<b>K</b><sub>f</sub>, <b>Q</b><sub>p</sub>), with all bright-field pixels receiving the same Poisson dose, η = |Σ w T| / √(N Σ|w|²). The reconstructions differ only in their weights:</p>
+    <ul>
+      <li>BF: w = 1 for the vBF pixels inside a detector of radius β, |<b>K</b><sub>f</sub>| ≤ β, giving |Σ T|/√(N N<sub>β</sub>). As β → K<sub>max</sub> the BF phase contrast vanishes, as reciprocity requires (a BF detector the size of the probe aperture has no first-order phase contrast). ABF: w = 1 on the annulus from the inner edge to K<sub>max</sub>. iCoM/DPC: w = <b>K</b><sub>f</sub>·<b>Q̂</b><sub>p</sub>.</li>
+      <li>tcBF: w = exp[−i∇χ(<b>K</b><sub>f</sub>)·<b>Q</b><sub>p</sub>], which removes each pixel's shift but not its residual CTF.</li>
+      <li>acBF: w = exp[−i arg T] on the N<sub>s</sub> pixels where either sideband is present (the double/triple-overlap regions for that <b>Q</b><sub>p</sub>), 0 elsewhere, giving Σ|T|/√(N N<sub>s</sub>). Each pixel's shift and residual CTF are both corrected before summing.</li>
+      <li>Self-luminous limit (dotted): per pixel |T| ≤ |A*(<b>K</b><sub>f</sub>)A(<b>K</b><sub>f</sub>−<b>Q</b><sub>p</sub>)| + |A(<b>K</b><sub>f</sub>)A*(<b>K</b><sub>f</sub>+<b>Q</b><sub>p</sub>)|, so Σ|T| ≤ 2N𝔸(<b>Q</b><sub>p</sub>), where 𝔸 is the normalized overlap area of two aperture disks (the aperture autocorrelation, i.e. the incoherent, ADF-like transfer function). In acBF units this is η<sub>SL</sub> = 2𝔸(Q<sub>p</sub>)/√(2𝔸(Q<sub>p</sub>) − 𝔸(2Q<sub>p</sub>)), using N<sub>s</sub>/N = 2𝔸(Q<sub>p</sub>) − 𝔸(2Q<sub>p</sub>), times the source envelope. It is reached when both sidebands add in phase in every pixel, and no aberrations can push acBF above it. Its DQE tends to 1 as Q<sub>p</sub> → 0.</li>
+    </ul>
+    <p><b>DQE.</b> At fixed dose, SNR² ∝ η². An ideal Zernike phase plate with a perfect detector has η = 2, so DQE(<b>Q</b><sub>p</sub>) = η²/4 is the fraction of the dose that a method turns into phase signal at <b>Q</b><sub>p</sub>, relative to that ideal. The detector itself is taken as perfect, so this is the DQE of the imaging method. For BF the magnitude |ΣT| is used.</p>
+    
+    <p class="hint">The combined maps are summed on a K grid of the chosen sampling, so large aberrations need finer sampling. The status line warns when the phase changes by more than π/2 between neighbouring pixels. Partial coherence: a Gaussian focal spread of rms Δ shifts C1, and χ is linear in C1, so the incoherent average is exact. Each term of T is multiplied by exp[−½(πλΔ)²(|<b>K</b><sub>f</sub>|² − |<b>K</b><sub>f</sub> ∓ <b>Q</b><sub>p</sub>|²)²], which is the double-overlap form of the chromatic envelope. A Gaussian source of rms size σ adds the envelope exp(−2π²σ²|<b>Q</b><sub>p</sub>|²). </p>
+    <p class="hint"><b>Credits.</b> C3P-0 was developed by David A. Muller and Claude, based on the information analysis of Ma <i>et al.</i> [1] and the Pelz lab's <a href="https://pelzlab.science/marimo/apps/ptychographic_ctf.html">ptychographic CTF app</a>. Source code: <a href="https://github.com/david-a-muller/C3P-0">github.com/david-a-muller/C3P-0</a>, MIT License.</p>
+    <p class="hint"><b>Background literature.</b><br>
+    [1] D. Ma, G. Li, D. A. Muller, S. E. Zeltmann (2026). Information in 4D-STEM: Where it is, and How to Use it. <i>Ultramicroscopy</i> 283:114351. <a href="https://doi.org/10.1016/j.ultramic.2026.114351">doi:10.1016/j.ultramic.2026.114351</a><br>
+    [2] F. Bennemann, A. I. Kirkland, D. A. Muller, P. D. Nellist (2026). Detective Quantum Efficiency-Based Comparison of HRTEM and Ptychography Phase Imaging. <i>Microscopy and Microanalysis</i> 32(2):ozag018. <a href="https://doi.org/10.1093/mam/ozag018">doi:10.1093/mam/ozag018</a><br>
+    [3] G. Varnavides, J. M. Bekkevold, S. M. Ribet, A. R. C. McCray, M. C. Scott, L. Jones, C. Ophus (2026). Beyond Contrast Transfer: Spectral SNR as a Finite-Dose Metric for STEM Phase Retrieval. <i>Microscopy and Microanalysis</i> 32(2):ozag005. <a href="https://doi.org/10.1093/mam/ozag005">doi:10.1093/mam/ozag005</a></p>
+  </details>
+</main>
+</div>
+<div id="tip"></div>
+<div id="modal"><div class="box">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><b id="mTitle">Export</b><button id="mClose">Close</button></div>
+  <div class="hint" id="mHint"></div>
+  <div id="mBody"></div>
+  <div class="btns" id="mBtns"></div>
+</div></div>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const TAU = 2*Math.PI;
+
+// ---------------------------------------------------------------- physics
+function lambdaA(kV){ const V=kV*1e3; return 12.2643/Math.sqrt(V*(1+0.97848e-6*V)); }
+const GH5 = [[0,0.5333333333],[1.3556261800,0.2220759220],[-1.3556261800,0.2220759220],[2.8569700139,0.0112574113],[-2.8569700139,0.0112574113]];
+
+function readOptics(){
+  const g = id => { const v=parseFloat($(id).value); return isFinite(v)?v:0; };
+  const kV=Math.max(1,g("kV")), alphaMrad=Math.max(0.01,g("alpha"));
+  const lam=lambdaA(kV), a=alphaMrad*1e-3, Kmax=a/lam, k=TAU/lam;
+  const ang = (deg,n)=>[Math.cos(n*deg*Math.PI/180), Math.sin(n*deg*Math.PI/180)];
+  const O = { kV, alphaMrad, lam, a, Kmax,
+    C1A: g("C1")*10, dA: g("dfs")*10,
+    c1perA: k*0.5*a*a,
+    a1: k*0.5*g("A1")*10*a*a, a1r: ang(g("A1a"),2),
+    b2: k/3*g("B2")*10*a**3,  b2r: ang(g("B2a"),1),
+    a2: k/3*g("A2")*10*a**3,  a2r: ang(g("A2a"),3),
+    c3: k/4*g("C3")*1e4*a**4,
+    a3: k/4*g("A3")*1e4*a**4, a3r: ang(g("A3a"),4),
+    c5: k/6*g("C5")*1e7*a**6,
+  };
+  const sig = g("src")/2.354820045;
+  O.envc = 2*Math.PI*Math.PI*sig*sig*Kmax*Kmax;   // per (q in Kmax units)^2
+  O.nodes = [[0,1]];
+  // Gaussian focal spread (rms dA): defocus enters chi linearly, so averaging exp(i*dphi) over it is exact:
+  // each term is multiplied by exp(-fsg * (|K|^2 - |K'|^2)^2), with |K| in Kmax units.
+  O.fsg = 0.5*Math.pow(O.c1perA*O.dA,2);
+  O.c1nom = O.c1perA*O.C1A;
+  return O;
+}
+// chi in radians; (x,y) in units of Kmax; c1 = coefficient of r^2 (radians)
+function chi(x,y,c1,O){
+  const r2=x*x+y*y;
+  let v = c1*r2 + O.c3*r2*r2 + O.c5*r2*r2*r2;
+  if(O.a1||O.a2||O.a3){
+    const z2r=x*x-y*y, z2i=2*x*y;
+    if(O.a1) v += O.a1*(z2r*O.a1r[0] + z2i*O.a1r[1]);
+    if(O.a2){ const z3r=z2r*x-z2i*y, z3i=z2r*y+z2i*x; v += O.a2*(z3r*O.a2r[0] + z3i*O.a2r[1]); }
+    if(O.a3){ const z4r=z2r*z2r-z2i*z2i, z4i=2*z2r*z2i; v += O.a3*(z4r*O.a3r[0] + z4i*O.a3r[1]); }
+  }
+  if(O.b2) v += O.b2*r2*(x*O.b2r[0] + y*O.b2r[1]);
+  return v;
+}
+function gradChi(x,y,O){ const h=1e-4;
+  return [(chi(x+h,y,O.c1nom,O)-chi(x-h,y,O.c1nom,O))/(2*h), (chi(x,y+h,O.c1nom,O)-chi(x,y-h,O.c1nom,O))/(2*h)]; }
+function ap(x,y,edge){ const r=Math.sqrt(x*x+y*y); if(edge>0){ const t=(1-r)/edge+0.5; return t<=0?0:(t>=1?1:t);} return r<=1+1e-9?1:0; }
+// T at a point (all in Kmax units). comp 0 full, 1 +Q term only, 2 -Q term only
+function Tpoint(kx,ky,qx,qy,O,comp,edge){
+  const a0=ap(kx,ky,edge); if(a0<=0) return [0,0];
+  const a1 = comp!==2 ? ap(kx-qx,ky-qy,edge) : 0;
+  const a2 = comp!==1 ? ap(kx+qx,ky+qy,edge) : 0;
+  if(a1<=0 && a2<=0) return [0,0];
+  let re=0, im=0;
+  const c1=O.c1nom, ck=chi(kx,ky,c1,O), rk=kx*kx+ky*ky;
+  if(a1>0){ const p=ck-chi(kx-qx,ky-qy,c1,O), dr=rk-((kx-qx)**2+(ky-qy)**2), d=O.fsg?Math.exp(-O.fsg*dr*dr):1; re+=a1*d*Math.cos(p); im+=a1*d*Math.sin(p); }
+  if(a2>0){ const p=chi(kx+qx,ky+qy,c1,O)-ck, dr=((kx+qx)**2+(ky+qy)**2)-rk, d=O.fsg?Math.exp(-O.fsg*dr*dr):1; re-=a2*d*Math.cos(p); im-=a2*d*Math.sin(p); }
+  const e = a0*(O.envc? Math.exp(-O.envc*(qx*qx+qy*qy)) : 1);
+  return [-im*e, re*e];        // multiply by i
+}
+
+// ---------------------------------------------------------------- colour
+function hex2rgb(h){ return [parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)]; }
+function ramp(stops){ const s=stops.map(([t,h])=>[t,hex2rgb(h)]);
+  return t=>{ if(t<=s[0][0]) return s[0][1]; for(let i=1;i<s.length;i++){ if(t<=s[i][0]){ const [t0,c0]=s[i-1],[t1,c1]=s[i], f=(t-t0)/(t1-t0); return [c0[0]+(c1[0]-c0[0])*f, c0[1]+(c1[1]-c0[1])*f, c0[2]+(c1[2]-c0[2])*f]; } } return s[s.length-1][1]; }; }
+const DIV = ramp([[-1,"#123f78"],[-0.5,"#6da7ec"],[0,"#f4f4f2"],[0.5,"#ee8a7f"],[1,"#9e1f1b"]]);
+const SEQ = ramp([[0,"#ffffff"],[0.2,"#cde2fb"],[0.45,"#6da7ec"],[0.7,"#256abf"],[1,"#0d2a55"]]);
+function hsv(h,s,v){ h=((h%1)+1)%1; const i=Math.floor(h*6), f=h*6-i, p=v*(1-s), q=v*(1-f*s), t=v*(1-(1-f)*s);
+  switch(i%6){case 0:return[v,t,p];case 1:return[q,v,p];case 2:return[p,v,t];case 3:return[p,q,v];case 4:return[t,p,v];default:return[v,p,q];} }
+function colorOf(mode,re,im,vmax){
+  switch(mode){
+    case "re": return DIV(Math.max(-1,Math.min(1,re/vmax)));
+    case "im": return DIV(Math.max(-1,Math.min(1,im/vmax)));
+    case "abs": return SEQ(Math.min(1,Math.hypot(re,im)/vmax));
+    case "arg": { const a=Math.hypot(re,im); if(a<1e-3*vmax) return [238,238,236]; const c=hsv(Math.atan2(im,re)/TAU,0.85,0.95); return c.map(x=>x*255); }
+    case "cdark": { const a=Math.min(1,Math.hypot(re,im)/vmax); const c=hsv(Math.atan2(im,re)/TAU,0.9,a); return c.map(x=>x*255); }
+    default: { const a=Math.min(1,Math.hypot(re,im)/vmax); const c=hsv(Math.atan2(im,re)/TAU,a,1); return c.map(x=>x*255); }
+  }
+}
+function toCanvas(re,im,n,mode,vmax){
+  const cv=document.createElement("canvas"); cv.width=n; cv.height=n;
+  const ctx=cv.getContext("2d"), id=ctx.createImageData(n,n), d=id.data;
+  for(let i=0;i<n*n;i++){ const c=colorOf(mode,re[i],im?im[i]:0,vmax); d[4*i]=c[0]; d[4*i+1]=c[1]; d[4*i+2]=c[2]; d[4*i+3]=255; }
+  ctx.putImageData(id,0,0); return cv;
+}
+
+// ---------------------------------------------------------------- figure primitives (canvas + svg)
+const FONT = "Helvetica, Arial, sans-serif";
+function runs(s){ const out=[]; let cur="", i=0; const push=(t,sh)=>{ if(t!=="") out.push({t,sh}); };
+  while(i<s.length){ const ch=s[i];
+    if(ch==="_"||ch==="^"){ push(cur,0); cur=""; const sh=ch==="_"?-1:1; i++; let t="";
+      if(s[i]==="{"){ const j=s.indexOf("}",i); t=s.slice(i+1,j); i=j+1; } else { t=s[i]||""; i++; }
+      push(t,sh);
+    } else { cur+=ch; i++; } }
+  push(cur,0); return out; }
+function drawText(c,it){
+  const fs=it.size||11, rs=runs(it.s); c.save(); c.translate(it.x,it.y); if(it.rot) c.rotate(it.rot*Math.PI/180);
+  const font=(sz,b)=>`${it.italic?"italic ":""}${b?"600 ":""}${sz}px ${FONT}`;
+  let W=0; for(const r of rs){ c.font=font(r.sh?fs*0.72:fs,it.bold); r.w=c.measureText(r.t).width; W+=r.w; }
+  let x = it.anchor==="middle"? -W/2 : it.anchor==="end"? -W : 0;
+  c.fillStyle=it.color||"#222"; c.textBaseline="alphabetic";
+  for(const r of rs){ c.font=font(r.sh?fs*0.72:fs,it.bold); const dy = r.sh<0? 0.28*fs : r.sh>0? -0.42*fs : 0; c.fillText(r.t,x,0.35*fs+dy); x+=r.w; }
+  c.restore();
+}
+function drawFig(fig,canvas,scale){
+  canvas.width=Math.round(fig.w*scale); canvas.height=Math.round(fig.h*scale);
+  canvas.style.width=fig.w+"px";
+  const c=canvas.getContext("2d"); c.setTransform(scale,0,0,scale,0,0);
+  c.fillStyle="#fff"; c.fillRect(0,0,fig.w,fig.h);
+  for(const it of fig.items){
+    c.save();
+    if(it.clip){ c.beginPath(); c.rect(...it.clip); c.clip(); }
+    c.setLineDash(it.dash||[]); c.lineWidth=it.lw||1; c.strokeStyle=it.stroke||"#333";
+    switch(it.t){
+      case "img": c.imageSmoothingEnabled=it.smooth!==false; c.imageSmoothingQuality="high"; c.drawImage(it.src,it.x,it.y,it.w,it.h); break;
+      case "rect": if(it.fill){ c.fillStyle=it.fill; c.fillRect(it.x,it.y,it.w,it.h);} if(it.stroke) c.strokeRect(it.x,it.y,it.w,it.h); break;
+      case "line": c.beginPath(); it.pts.forEach((p,i)=> i?c.lineTo(p[0],p[1]):c.moveTo(p[0],p[1])); c.lineJoin="round"; c.lineCap="round"; c.stroke(); break;
+      case "circle": c.beginPath(); c.arc(it.cx,it.cy,it.r,0,TAU); c.stroke(); break;
+      case "text": drawText(c,it); break;
+    }
+    c.restore();
+  }
+}
+const esc = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+function figSVG(fig){
+  let defs="", body="", clips=new Map();
+  const clipId = cl => { const k=cl.join(","); if(!clips.has(k)){ const id="c"+clips.size; clips.set(k,id); defs+=`<clipPath id="${id}"><rect x="${cl[0]}" y="${cl[1]}" width="${cl[2]}" height="${cl[3]}"/></clipPath>`; } return clips.get(k); };
+  const f = v => +v.toFixed(2);
+  for(const it of fig.items){
+    const cp = it.clip? ` clip-path="url(#${clipId(it.clip)})"` : "";
+    const st = `stroke="${it.stroke||"#333"}" stroke-width="${it.lw||1}"${it.dash&&it.dash.length?` stroke-dasharray="${it.dash.join(" ")}"`:""} fill="none"`;
+    switch(it.t){
+      case "img": { const url=it.src._url||(it.src._url=it.src.toDataURL("image/png"));
+        body+=`<image x="${f(it.x)}" y="${f(it.y)}" width="${f(it.w)}" height="${f(it.h)}" preserveAspectRatio="none" href="${url}" xlink:href="${url}"${it.smooth===false?' style="image-rendering:pixelated"':""}${cp}/>`; break; }
+      case "rect": body+=`<rect x="${f(it.x)}" y="${f(it.y)}" width="${f(it.w)}" height="${f(it.h)}" ${it.stroke?`stroke="${it.stroke}" stroke-width="${it.lw||1}"`:'stroke="none"'} fill="${it.fill||"none"}"${cp}/>`; break;
+      case "line": body+=`<polyline points="${it.pts.map(p=>f(p[0])+","+f(p[1])).join(" ")}" ${st} stroke-linejoin="round" stroke-linecap="round"${cp}/>`; break;
+      case "circle": body+=`<circle cx="${f(it.cx)}" cy="${f(it.cy)}" r="${f(it.r)}" ${st}${cp}/>`; break;
+      case "text": { const fs=it.size||11, rs=runs(it.s);
+        const anc = it.anchor==="middle"?"middle":it.anchor==="end"?"end":"start";
+        let inner="", cur=0;
+        for(const r of rs){ const tgt = r.sh<0?0.28*fs : r.sh>0?-0.42*fs : 0; const dy=tgt-cur; cur=tgt;
+          inner+=`<tspan${dy?` dy="${f(dy)}"`:""}${r.sh?` font-size="${f(fs*0.72)}"`:""}>${esc(r.t)}</tspan>`; }
+        const tr = it.rot? ` transform="rotate(${it.rot} ${f(it.x)} ${f(it.y)})"` : "";
+        body+=`<text x="${f(it.x)}" y="${f(it.y+0.35*fs)}" font-family="${FONT}" font-size="${fs}"${it.bold?' font-weight="600"':""}${it.italic?' font-style="italic"':""} text-anchor="${anc}" fill="${it.color||"#222"}"${tr}>${inner}</text>`; break; }
+    }
+  }
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${fig.w}" height="${fig.h}" viewBox="0 0 ${fig.w} ${fig.h}"><defs>${defs}</defs><rect width="100%" height="100%" fill="#fff"/>${body}</svg>`;
+}
+
+// ---------------------------------------------------------------- axes helpers
+function unitInfo(O){
+  const u=$("units").value;
+  if(u==="mrad") return {f:O.alphaMrad, short:" mrad", lab:"mrad"};
+  if(u==="inv") return {f:O.Kmax, short:" Å^{−1}", lab:"Å^{−1}"};
+  return {f:1, short:" K_{max}", lab:"K_{max}"};
+}
+function niceStep(x){ const p=Math.pow(10,Math.floor(Math.log10(x))), m=x/p; return (m<1.5?1:m<3.5?2:m<7.5?5:10)*p; }
+function fmt(v){ if(Math.abs(v)<1e-9) return "0"; const a=Math.abs(v); const d = a>=100?0:a>=10?1:a>=1?2:3; return (+v.toFixed(d)).toString().replace("-","−"); }
+function ticks(E,U){ const R=E*U.f, st=niceStep(R/2.2), out=[]; for(let k=Math.ceil(-R/st-1e-9);k*st<=R+1e-9;k++) out.push({u:k*st/U.f, s:fmt(k*st)}); return out; }
+
+function colorbarItems(x,y,P,mode,vmax,label){
+  const items=[];
+  if(mode==="clight"||mode==="cdark"){
+    const n=120, re=new Float32Array(n*n), im=new Float32Array(n*n);
+    const cv=document.createElement("canvas"); cv.width=n; cv.height=n; const ctx=cv.getContext("2d"), id=ctx.createImageData(n,n);
+    for(let j=0;j<n;j++) for(let i=0;i<n;i++){ const X=(i+0.5)/n*2-1, Y=1-(j+0.5)/n*2, r=Math.hypot(X,Y), k=4*(j*n+i);
+      if(r>1){ id.data[k+3]=0; continue; } const c=colorOf(mode,X*vmax,Y*vmax,vmax); id.data[k]=c[0]; id.data[k+1]=c[1]; id.data[k+2]=c[2]; id.data[k+3]=255; }
+    ctx.putImageData(id,0,0);
+    const D=Math.min(84,P*0.5), cx=x+D/2+16, cy=y+D/2+14;
+    items.push({t:"img",src:cv,x:cx-D/2,y:cy-D/2,w:D,h:D});
+    items.push({t:"circle",cx,cy,r:D/2,stroke:"#666",lw:0.6});
+    items.push({t:"line",pts:[[cx-D/2-4,cy],[cx+D/2+4,cy]],stroke:"#999",lw:0.5});
+    items.push({t:"line",pts:[[cx,cy-D/2-4],[cx,cy+D/2+4]],stroke:"#999",lw:0.5});
+    items.push({t:"text",s:"Re T",x:cx+D/2+6,y:cy,size:9.5,anchor:"start"});
+    items.push({t:"text",s:"Im T",x:cx,y:cy-D/2-9,size:9.5,anchor:"middle"});
+    items.push({t:"text",s:`rim: |T| = ${fmt(vmax)}`,x:cx,y:cy+D/2+12,size:9.5,anchor:"middle"});
+    return {items,w:D+60};
+  }
+  const H=P, bw=12, n=128, cv=document.createElement("canvas"); cv.width=1; cv.height=n; const ctx=cv.getContext("2d"), id=ctx.createImageData(1,n);
+  let lo, hi;
+  if(mode==="abs"){ lo=0; hi=vmax; } else if(mode==="arg"){ lo=-Math.PI; hi=Math.PI; } else { lo=-vmax; hi=vmax; }
+  for(let j=0;j<n;j++){ const v=hi-(j+0.5)/n*(hi-lo); let c;
+    if(mode==="arg") c=hsv(v/TAU,0.85,0.95).map(x=>x*255); else c=colorOf(mode==="abs"?"abs":"re",v,0,vmax);
+    id.data[4*j]=c[0]; id.data[4*j+1]=c[1]; id.data[4*j+2]=c[2]; id.data[4*j+3]=255; }
+  ctx.putImageData(id,0,0);
+  items.push({t:"img",src:cv,x,y,w:bw,h:H});
+  items.push({t:"rect",x,y,w:bw,h:H,stroke:"#333",lw:0.8});
+  const tv = mode==="arg"? [[-Math.PI,"−π"],[0,"0"],[Math.PI,"π"]] : [[lo,fmt(lo)],[(lo+hi)/2,fmt((lo+hi)/2)],[hi,fmt(hi)]];
+  for(const [v,s] of tv){ const py=y+(hi-v)/(hi-lo)*H; items.push({t:"line",pts:[[x+bw,py],[x+bw+3,py]],lw:0.8}); items.push({t:"text",s,x:x+bw+5,y:py,size:10}); }
+  items.push({t:"text",s:label,x:x+bw+46,y:y+H/2,size:11,anchor:"middle",rot:-90});
+  return {items,w:bw+56};
+}
+function modeLabel(mode){ return {re:"Re T",im:"Im T",abs:"|T|",arg:"arg T"}[mode]||"T"; }
+
+// grid of image panels
+function panelFig(list,o){
+  const P=o.P, n=Math.max(1,list.length), cols=Math.max(1,Math.min(n,o.cols)), rows=Math.ceil(n/cols);
+  const L=56, gx=20, titleH=20, bottom=40, top=4, U=o.U, E=o.E;
+  const items=[], hits=[], rowH=titleH+P+bottom;
+  const cbx = L+cols*P+(cols-1)*gx+22;
+  const tks=ticks(E,U);
+  list.forEach((p,idx)=>{
+    const r=Math.floor(idx/cols), ci=idx%cols, x=L+ci*(P+gx), y=top+r*rowH+titleH;
+    const X=u=>x+(u+E)/(2*E)*P, Y=v=>y+(E-v)/(2*E)*P, clip=[x,y,P,P];
+    items.push({t:"text",s:p.title,x:x+P/2,y:y-10,size:12,anchor:"middle"});
+    items.push({t:"img",src:p.img,x,y,w:P,h:P,smooth:p.smooth});
+    for(const c of (p.circles||[])){
+      items.push({t:"circle",cx:X(c.x),cy:Y(c.y),r:c.r/(2*E)*P,stroke:o.ovc,lw:c.lw||1,dash:c.dash,clip});
+      if(c.label && o.labels && Math.hypot(c.x,c.y)>0.12){ const lx=X(c.x), ly=Y(c.y); if(lx>x+8&&lx<x+P-8&&ly>y+8&&ly<y+P-8) items.push({t:"text",s:c.label,x:lx,y:ly,size:10,anchor:"middle",color:o.ovt,clip}); }
+    }
+    items.push({t:"rect",x,y,w:P,h:P,stroke:"#333",lw:0.8});
+    for(const tk of tks){ const px=X(tk.u), py=Y(tk.u);
+      items.push({t:"line",pts:[[px,y+P],[px,y+P+4]],lw:0.8}); items.push({t:"text",s:tk.s,x:px,y:y+P+12,size:10,anchor:"middle"});
+      items.push({t:"line",pts:[[x-4,py],[x,py]],lw:0.8}); if(ci===0) items.push({t:"text",s:tk.s,x:x-6,y:py,size:10,anchor:"end"}); }
+    items.push({t:"text",s:`${o.xlab} (${U.lab})`,x:x+P/2,y:y+P+28,size:11,anchor:"middle"});
+    if(ci===0) items.push({t:"text",s:`${o.ylab} (${U.lab})`,x:x-40,y:y+P/2,size:11,anchor:"middle",rot:-90});
+    hits.push({x,y,w:P,h:P,E,idx});
+  });
+  let w=cbx;
+  if(o.cbar){ const cb=colorbarItems(cbx,top+titleH,P,o.cbar.mode,o.cbar.vmax,o.cbar.label); items.push(...cb.items); w=cbx+cb.w+6; }
+  else w=cbx-10;
+  if(!list.length) items.push({t:"text",s:"(empty series)",x:L+P/2,y:top+titleH+P/2,size:12,anchor:"middle",color:"#888"});
+  return {w:Math.ceil(w),h:Math.ceil(top+rows*rowH),items,hits};
+}
+
+// ---------------------------------------------------------------- series
+function parseSeries(str,angDeg){
+  const a=angDeg*Math.PI/180, out=[], rx=/\(\s*([-+]?[\d.]+(?:e[-+]?\d+)?)\s*[,\s]\s*([-+]?[\d.]+(?:e[-+]?\d+)?)\s*\)|([-+]?[\d.]+(?:e[-+]?\d+)?)/gi;
+  let m; while((m=rx.exec(str))&&out.length<12){
+    if(m[1]!==undefined){ const x=+m[1], y=+m[2]; if(isFinite(x)&&isFinite(y)) out.push({x,y,explicit:true}); }
+    else { const v=+m[3]; if(isFinite(v)) out.push({x:v*Math.cos(a),y:v*Math.sin(a),mag:v,ang:angDeg,explicit:false}); }
+  }
+  return out;
+}
+function ptTitle(sym,p,U){
+  if(!p.explicit){ return `|${sym}| = ${fmt(p.mag*U.f)}${U.short}` + (Math.abs(p.ang%360)>1e-9? `, ${fmt(p.ang)}°`:""); }
+  return `${sym} = (${fmt(p.x*U.f)}, ${fmt(p.y*U.f)})${U.short}`;
+}
+
+// ---------------------------------------------------------------- state & rows
+const S = { O:null, det:null, vbf:null, qpts:[], kpts:[], comb:null, combToken:0, plot:null };
+
+function computeRows(){
+  const O=S.O=readOptics(), N=+$("N").value, mode=$("mode").value, comp=+$("comp").value, U=unitInfo(O);
+  const P=Math.max(60,+$("P").value||190), cols=Math.max(1,+$("cols").value||6), ovl=$("ovl").checked, labels=$("ovlab").checked;
+  S.qpts=parseSeries($("qlist").value,+$("qang").value||0);
+  S.kpts=parseSeries($("klist").value,+$("kang").value||0);
+  const dark = mode==="cdark";
+  const ovc = dark? "rgba(255,255,255,0.75)" : "rgba(0,0,0,0.55)", ovt = dark? "#fff" : "#222";
+  const fixed=$("scale").value==="fixed";
+
+  const doRow = (pts,E,kind)=>{
+    const arrs=[]; let vm=0;
+    const h=2*E/N, edge=h;
+    for(const p of pts){
+      const re=new Float32Array(N*N), im=new Float32Array(N*N);
+      for(let j=0;j<N;j++){ const v=E-(j+0.5)*h; for(let i=0;i<N;i++){ const u=-E+(i+0.5)*h;
+        const t = kind==="det"? Tpoint(u,v,p.x,p.y,O,comp,edge) : Tpoint(p.x,p.y,u,v,O,comp,edge);
+        re[j*N+i]=t[0]; im[j*N+i]=t[1];
+        const m = mode==="re"?Math.abs(t[0]): mode==="im"?Math.abs(t[1]) : Math.hypot(t[0],t[1]); if(m>vm) vm=m; } }
+      arrs.push([re,im]);
+    }
+    const vmax = fixed? 2 : (vm>1e-6? vm : 1);
+    const list = pts.map((p,i)=>{
+      const circles=[];
+      if(ovl){
+        if(kind==="det"){
+          circles.push({x:0,y:0,r:1,lw:1});
+          circles.push({x:p.x,y:p.y,r:1,dash:[5,3],label:"+Q_p"});
+          circles.push({x:-p.x,y:-p.y,r:1,dash:[1.5,2.5],lw:1.3,label:"−Q_p"});
+        } else {
+          circles.push({x:0,y:0,r:2,lw:0.8,dash:[2,3]});
+          circles.push({x:p.x,y:p.y,r:1,dash:[5,3],label:"+K_f"});
+          circles.push({x:-p.x,y:-p.y,r:1,dash:[1.5,2.5],lw:1.3,label:"−K_f"});
+        }
+      }
+      return {img:toCanvas(arrs[i][0],arrs[i][1],N,mode,vmax), title: ptTitle(kind==="det"?"Q_p":"K_f",p,U), circles};
+    });
+    return panelFig(list,{P,cols,E,U,ovc,ovt,labels,
+      xlab: kind==="det"?"K_{f,x}":"Q_{p,x}", ylab: kind==="det"?"K_{f,y}":"Q_{p,y}",
+      cbar:{mode,vmax,label:modeLabel(mode)}});
+  };
+  S.det = doRow(S.qpts, 1.25, "det");
+  S.vbf = doRow(S.kpts, 2.2, "vbf");
+  drawFig(S.det,$("cvDet"),window.devicePixelRatio||1);
+  drawFig(S.vbf,$("cvVbf"),window.devicePixelRatio||1);
+  updateInfo();
+}
+
+function updateInfo(){
+  const O=S.O; let maxg=0;
+  for(let k=0;k<400;k++){ const r=Math.sqrt((k%20+0.5)/20), t=TAU*Math.floor(k/20)/20; const g=gradChi(r*Math.cos(t),r*Math.sin(t),O); maxg=Math.max(maxg,Math.hypot(g[0],g[1])); }
+  S.maxGrad=maxg;
+  const chiRim = chi(1,0,O.c1nom,O);
+  $("optInfo").innerHTML = `λ = ${(O.lam*100).toFixed(3)} pm &nbsp; K<sub>max</sub> = ${O.Kmax.toFixed(3)} Å⁻¹<br>`+
+    `2K<sub>max</sub> cutoff ↔ d = ${(1/(2*O.Kmax)).toFixed(3)} Å<br>`+
+    `χ at rim (+K<sub>x</sub>) = ${chiRim.toFixed(2)} rad; max |∇χ| = ${maxg.toFixed(1)} rad/K<sub>max</sub>`;
+}
+
+// ---------------------------------------------------------------- combined transfer (grid sums)
+// Kernel: accumulate weighted sums of T over pixels k0..k1-1 for every Q on the half-plane grid.
+// Runs inside Web Workers (source passed via toString) or on the main thread as a fallback.
+function ctfKernel(P,k0,k1,acc,onProg){
+  const M=P.M, st=P.st, Lq=P.Lq, W=2*M+1, Sq=2*Lq+1, dq=1/P.Mq, fsg=P.fsg;
+  const Er=P.Er, Ei=P.Ei, R2=P.R2, Af=P.Af, Ki=P.Ki, Kj=P.Kj, Gx=P.Gx, Gy=P.Gy, Kf=P.Kf, Qes=P.Qes;
+  const bR=acc.bR,bI=acc.bI,aR=acc.aR,aI=acc.aI,tR=acc.tR,tI=acc.tI,cR=acc.cR,cI=acc.cI,sA=acc.sA,nS=acc.nS,nL=acc.nL;
+  const cxr=new Float64Array(Sq), cxi=new Float64Array(Sq), cyr=new Float64Array(Lq+1), cyi=new Float64Array(Lq+1);
+  const at=(ii,jj)=> (ii<-M||ii>M||jj<-M||jj>M)? -1 : (jj+M)*W+(ii+M);
+  for(let k=k0;k<k1;k++){
+    const i=Ki[k], j=Kj[k], g=(j+M)*W+(i+M), x=i/M, y=j/M, fl=Kf[k], e0r=Er[g], e0i=Ei[g], r2k=R2[g];
+    { const ar=Math.cos(Gx[k]*dq), ai=-Math.sin(Gx[k]*dq); let pr=1, pi=0; cxr[Lq]=1; cxi[Lq]=0;
+      for(let m=1;m<=Lq;m++){ const nr=pr*ar-pi*ai, ni=pr*ai+pi*ar; pr=nr; pi=ni; cxr[Lq+m]=pr; cxi[Lq+m]=pi; cxr[Lq-m]=pr; cxi[Lq-m]=-pi; }
+      const br=Math.cos(Gy[k]*dq), bi=-Math.sin(Gy[k]*dq); pr=1; pi=0; cyr[0]=1; cyi[0]=0;
+      for(let m=1;m<=Lq;m++){ const nr=pr*br-pi*bi, ni=pr*bi+pi*br; pr=nr; pi=ni; cyr[m]=pr; cyi[m]=pi; } }
+    for(let qj=0;qj<=Lq;qj++){
+      const qy=qj*dq;
+      // Q where |K-Q|<=1 (disk at +K) or |K+Q|<=1 (disk at -K), as integer qi intervals (1-step margin; exact test below)
+      let l1=1, h1=0, l2=1, h2=0;
+      const d1=qy-y; if(d1*d1<=1+1e-9){ const hw=Math.sqrt(Math.max(0,1-d1*d1)); l1=Math.ceil((x-hw)/dq)-1; h1=Math.floor((x+hw)/dq)+1; }
+      const d2=qy+y; if(d2*d2<=1+1e-9){ const hw=Math.sqrt(Math.max(0,1-d2*d2)); l2=Math.ceil((-x-hw)/dq)-1; h2=Math.floor((-x+hw)/dq)+1; }
+      const lmin = qj===0? 1 : -Lq;
+      let segs;
+      if(l1>h1) segs=[[l2,h2]]; else if(l2>h2) segs=[[l1,h1]];
+      else if(l2<=h1+1 && l1<=h2+1) segs=[[Math.min(l1,l2),Math.max(h1,h2)]]; else segs=[[l1,h1],[l2,h2]];
+      const dj=qj*st, j1=j-dj, j2=j+dj, row=qj*Sq+Lq, yr=cyr[qj], yi=cyi[qj];
+      for(const sg of segs){ const lo=Math.max(lmin,sg[0]), hi=Math.min(Lq,sg[1]);
+        for(let qi=lo;qi<=hi;qi++){
+          const di=qi*st, g1=at(i-di,j1), g2=at(i+di,j2), a1=g1>=0?Af[g1]:0, a2=g2>=0?Af[g2]:0;
+          if(!a1&&!a2) continue;
+          const q=row+qi;
+          nS[q]++; nL[q]+=a1+a2;
+          let tr=0, ti=0;
+          if(a1){ const e1r=Er[g1], e1i=Ei[g1]; let d=1; if(fsg){ const dr=r2k-R2[g1]; d=Math.exp(-fsg*dr*dr); } tr+=d*(e0r*e1r+e0i*e1i); ti+=d*(e0i*e1r-e0r*e1i); }
+          if(a2){ const e2r=Er[g2], e2i=Ei[g2]; let d=1; if(fsg){ const dr=R2[g2]-r2k; d=Math.exp(-fsg*dr*dr); } tr-=d*(e0r*e2r+e0i*e2i); ti-=d*(e0r*e2i-e0i*e2r); }
+          const es=Qes[q], Tr=-ti*es, Ti=tr*es;
+          if(fl&2){ bR[q]+=Tr; bI[q]+=Ti; } if(fl&1){ aR[q]+=Tr; aI[q]+=Ti; }
+          const ix=qi+Lq, xr=cxr[ix], xi=cxi[ix], wr=xr*yr-xi*yi, wi=xr*yi+xi*yr;
+          tR[q]+=wr*Tr-wi*Ti; tI[q]+=wr*Ti+wi*Tr;
+          const qx=qi*dq, qa=Math.sqrt(qx*qx+qy*qy), wc=(x*qx+y*qy)/qa; cR[q]+=wc*Tr; cI[q]+=wc*Ti;
+          sA[q]+=Math.sqrt(Tr*Tr+Ti*Ti);
+        } }
+    }
+    if(onProg && (k-k0)%1024===1023) onProg(k-k0+1);
+  }
+}
+const ACC_KEYS=["bR","bI","aR","aI","tR","tI","cR","cI","sA","nS","nL"];
+function newAcc(n){ const a={}; for(const k of ACC_KEYS) a[k]=new Float64Array(n); return a; }
+let WORKER_URL=null;
+function workerURL(){
+  if(WORKER_URL) return WORKER_URL;
+  const src=`const ACC_KEYS=${JSON.stringify(ACC_KEYS)};\nconst ctfKernel=${ctfKernel.toString()};\n`+
+    `onmessage=e=>{ const {P,k0,k1,n}=e.data; const acc={}; for(const k of ACC_KEYS) acc[k]=new Float64Array(n);`+
+    ` ctfKernel(P,k0,k1,acc,c=>postMessage({prog:c})); postMessage({acc},ACC_KEYS.map(k=>acc[k].buffer)); };`;
+  WORKER_URL=URL.createObjectURL(new Blob([src],{type:"text/javascript"})); return WORKER_URL;
+}
+S.workers=[];
+function stopWorkers(){ for(const w of S.workers){ try{ w.terminate(); }catch(e){} } S.workers=[]; }
+
+async function computeCombined(){
+  stopWorkers();
+  const token=++S.combToken, O=S.O, M=+$("M").value, inner=Math.max(0,Math.min(0.99,+$("inner").value||0)), bfR=Math.max(0.01,Math.min(1,+$("bfR").value||0.3));
+  // K grid: M pixels per Kmax. Q grid: Mq = min(M,64) samples per Kmax (stride st on the K grid)
+  const Mq=Math.min(M,64), st=M/Mq, Lq=Math.ceil(2*Mq+1), Sq=2*Lq+1, W=2*M+1, NQ=(Lq+1)*Sq;
+  $("cstat").textContent="Computing combined transfer…"; $("cprog").style.width="0%";
+  await new Promise(r=>setTimeout(r,0)); if(token!==S.combToken) return;
+  const Er=new Float32Array(W*W), Ei=new Float32Array(W*W), Af=new Uint8Array(W*W), R2=new Float32Array(W*W);
+  for(let j=-M;j<=M;j++){ const y=j/M; for(let i=-M;i<=M;i++){ const x=i/M; if(x*x+y*y>1+1e-9) continue; const g=(j+M)*W+(i+M); Af[g]=1; R2[g]=x*x+y*y;
+    const c=chi(x,y,O.c1nom,O); Er[g]=Math.cos(c); Ei[g]=Math.sin(c); } }
+  let NK=0; for(let j=-M;j<=M;j++) for(let i=-M;i<=M;i++) if(i*i+j*j<=M*M*(1+1e-9)) NK++;
+  const Ki=new Int16Array(NK), Kj=new Int16Array(NK), Gx=new Float64Array(NK), Gy=new Float64Array(NK), Kf=new Uint8Array(NK);
+  let sumKx2=0, Nann=0, Nbf=0, k=0;
+  for(let j=-M;j<=M;j++) for(let i=-M;i<=M;i++){ if(i*i+j*j>M*M*(1+1e-9)) continue; const x=i/M,y=j/M,r=Math.hypot(x,y);
+    const gr=gradChi(x,y,O), ann=r>=inner-1e-9, inb=r<=bfR+1e-9; if(ann) Nann++; if(inb) Nbf++; sumKx2+=x*x;
+    Ki[k]=i; Kj[k]=j; Gx[k]=gr[0]; Gy[k]=gr[1]; Kf[k]=(ann?1:0)|(inb?2:0); k++; }
+  const Qes=new Float64Array(NQ);
+  for(let qj=0;qj<=Lq;qj++) for(let qi=-Lq;qi<=Lq;qi++){ const qa=Math.hypot(qi,qj)/Mq; Qes[qj*Sq+qi+Lq]=O.envc?Math.exp(-O.envc*qa*qa):1; }
+  const P={M,st,Lq,Mq,fsg:O.fsg,Er,Ei,R2,Af,Ki,Kj,Gx,Gy,Kf,Qes};
+  const acc=newAcc(NQ);
+  let done=0; const prog=()=>{ $("cprog").style.width=(100*done/NK).toFixed(1)+"%"; };
+  let usedWorkers=0;
+  try{
+    if(typeof Worker==="undefined") throw 0;
+    const nW=Math.max(1,Math.min(8,(navigator.hardwareConcurrency||4)-1, Math.ceil(NK/2000)));
+    const url=workerURL(), parts=[];
+    for(let w=0;w<nW;w++) parts.push([Math.floor(NK*w/nW), Math.floor(NK*(w+1)/nW)]);
+    const counts=new Array(nW).fill(0);
+    const results=await Promise.all(parts.map(([k0,k1],w)=>new Promise((res,rej)=>{
+      const wk=new Worker(url); S.workers.push(wk);
+      wk.onmessage=e=>{ if(e.data.prog){ counts[w]=e.data.prog; done=counts.reduce((a,b)=>a+b,0); prog(); } else { res(e.data.acc); wk.terminate(); } };
+      wk.onerror=err=>{ err.preventDefault&&err.preventDefault(); rej(err); };
+      wk.postMessage({P,k0,k1,n:NQ});
+    })));
+    if(token!==S.combToken) return;
+    for(const r of results) for(const key of ACC_KEYS){ const A=acc[key], B=r[key]; for(let q=0;q<NQ;q++) A[q]+=B[q]; }
+    usedWorkers=nW;
+  }catch(e){
+    if(token!==S.combToken) return;
+    stopWorkers(); for(const key of ACC_KEYS) acc[key].fill(0); done=0;
+    const chunk=Math.max(64,Math.round(200000/Math.max(1,Lq*Lq)));
+    for(let k0=0;k0<NK;k0+=chunk){ ctfKernel(P,k0,Math.min(NK,k0+chunk),acc,null); done=Math.min(NK,k0+chunk); prog();
+      await new Promise(r=>setTimeout(r,0)); if(token!==S.combToken) return; }
+  }
+  S.workers=[];
+  const out={bf:new Float32Array(Sq*Sq),bfRe:new Float32Array(Sq*Sq),abf:new Float32Array(Sq*Sq),tc:new Float32Array(Sq*Sq),com:new Float32Array(Sq*Sq),pm:new Float32Array(Sq*Sq),sl:new Float32Array(Sq*Sq)};
+  const nABF=Math.sqrt(NK*Math.max(1,Nann)), nBF=Math.sqrt(NK*Math.max(1,Nbf)), nCOM=Math.sqrt(NK*sumKx2);
+  const {bR,bI,aR,aI,tR,tI,cR,cI,sA,nS,nL}=acc;
+  for(let qj=0;qj<=Lq;qj++) for(let qi=-Lq;qi<=Lq;qi++){
+    if(qj===0&&qi<=0) continue; const q=qj*Sq+qi+Lq;
+    const vals={bf:Math.hypot(bR[q],bI[q])/nBF, bfRe:bR[q]/nBF, abf:Math.hypot(aR[q],aI[q])/nABF, tc:Math.hypot(tR[q],tI[q])/NK, com:Math.hypot(cR[q],cI[q])/nCOM, pm:nS[q]?sA[q]/Math.sqrt(NK*nS[q]):0, sl:nS[q]?Qes[q]*nL[q]/Math.sqrt(NK*nS[q]):0};
+    const o1=(Lq-qj)*Sq+(qi+Lq), o2=(Lq+qj)*Sq+(Lq-qi);   // image rows: top = +qy
+    for(const key in vals){ out[key][o1]=vals[key]; out[key][o2]=vals[key]; }
+  }
+  $("cprog").style.width="100%";
+  S.comb={out,Sq,Lq,M:Mq,MK:M,NK,bfR,Nbf,inner};
+  const ph = 2*S.maxGrad/M;
+  $("cstat").innerHTML = `N = ${NK.toLocaleString()} bright-field pixels (${M} px/K<sub>max</sub>), Q sampled at ${Mq} per K<sub>max</sub>${usedWorkers?`, ${usedWorkers} parallel workers`:""}, ${O.dA>0?`focal spread ${(O.dA/10).toFixed(1)} nm rms (exact Gaussian average)`:"coherent"}.` +
+    (ph>Math.PI/2? ` <span class="warn">Phase changes by ${ph.toFixed(1)} rad between pixels at the disk edge. Increase the K-sampling for accurate sums.</span>`:"");
+  drawCombined();
+}
+
+const CURVES=[
+  {key:"pm",  name:"acBF", color:"#2a78d6", dash:[], on:true},
+  {key:"sl",  name:"Self-luminous limit", color:"#52514e", dash:[0.5,3.5], lw:2.2, on:true},
+  {key:"tc",  name:"tcBF", color:"#1baf7a", dash:[], on:true},
+  {key:"com", name:"iCoM / DPC", color:"#eda100", dash:[], on:true},
+  {key:"bfRe",name:"BF (signed)", color:"#6250d6", dash:[], on:true},
+  {key:"bf",  name:"BF |·|", color:"#eb6834", dash:[2,3], on:false},
+  {key:"abf", name:"ABF", color:"#e87ba4", dash:[], on:false},
+];
+function buildToggles(){
+  $("ltog").innerHTML = CURVES.map((c,i)=>`<label><input type="checkbox" data-ci="${i}" ${c.on?"checked":""}><span class="sw" style="background:${c.color}"></span>${c.name}</label>`).join("");
+  $("ltog").querySelectorAll("input").forEach(el=>el.addEventListener("change",()=>{ CURVES[+el.dataset.ci].on=el.checked; updateCtlVis(); drawCombined(); }));
+}
+function profiles(){
+  const C=S.comb, {Sq,Lq,M}=C, maxq=Lq/M, res={x:[],y:{}};
+  for(const c of CURVES) res.y[c.key]=[];
+  if($("prof").value==="radial"){
+    const nb=Lq+1, acc={}, cnt=new Float64Array(nb); for(const c of CURVES) acc[c.key]=new Float64Array(nb);
+    for(let j=0;j<Sq;j++) for(let i=0;i<Sq;i++){ const r=Math.hypot(i-Lq,j-Lq), b=Math.round(r); if(b<1||b>=nb) continue; cnt[b]++; for(const c of CURVES) acc[c.key][b]+=C.out[c.key][j*Sq+i]; }
+    res.x.push(0); for(const c of CURVES) res.y[c.key].push(c.key==="bfRe"? C.out.bfRe[Lq*Sq+Lq+1] : c.key==="sl"? 2 : 0);
+    for(let b=1;b<nb;b++){ if(!cnt[b]) continue; res.x.push(b/M); for(const c of CURVES) res.y[c.key].push(acc[c.key][b]/cnt[b]); }
+  } else {
+    const a=(+$("pang").value||0)*Math.PI/180, n=Math.round(maxq*M*2);
+    const bil=(arr,x,y)=>{ const fx=x*M+Lq, fy=Lq-y*M, i0=Math.floor(fx), j0=Math.floor(fy), dx=fx-i0, dy=fy-j0;
+      const at=(i,j)=> (i<0||j<0||i>=Sq||j>=Sq)?0:arr[j*Sq+i];
+      return (1-dx)*(1-dy)*at(i0,j0)+dx*(1-dy)*at(i0+1,j0)+(1-dx)*dy*at(i0,j0+1)+dx*dy*at(i0+1,j0+1); };
+    for(let s=1;s<=n;s++){ const q=s/(2*M); res.x.push(q); for(const c of CURVES) res.y[c.key].push(bil(C.out[c.key],q*Math.cos(a),q*Math.sin(a))); }
+  }
+  return res;
+}
+function curveName(c,base){
+  const C=S.comb; if(!C) return base;
+  if(c.key==="bf"||c.key==="bfRe") return `${base}, β = ${fmt(C.bfR)} K_{max}`;
+  if(c.key==="abf") return `${base}, ${fmt(C.inner)}–1 K_{max}`;
+  return base; }
+function updateCtlVis(){
+  const k=$("cmap").value, on=key=>CURVES.find(c=>c.key===key).on;
+  $("bfCtl").style.display = (on("bf")||on("bfRe")||k==="bf"||k==="bfRe")? "" : "none";
+  $("abfCtl").style.display = (on("abf")||k==="abf")? "" : "none";
+}
+function plotFig(pr,U,opt){
+  opt=opt||{}; const val=opt.val||((c,i)=>pr.y[c.key][i]);
+  const W=560, Hh=opt.H||330, L=58, R=16, T=14, B=46, pw=W-L-R, ph=Hh-T-B, items=[];
+  const on=CURVES.filter(c=>c.on);
+  let ymin=0, ymax=opt.ymaxMin||0.5; for(const c of on) pr.x.forEach((_,i)=>{ const v=val(c,i); if(v<ymin) ymin=v; if(v>ymax) ymax=v; });
+  const st=niceStep((ymax-ymin)/5); ymax=Math.ceil(ymax/st-1e-9)*st; ymin=Math.floor(ymin/st+1e-9)*st;
+  const xmax=2.05, X=q=>L+q/xmax*pw, Y=v=>T+(ymax-v)/(ymax-ymin)*ph;
+  for(let v=ymin; v<=ymax+1e-9; v+=st){ items.push({t:"line",pts:[[L,Y(v)],[L+pw,Y(v)]],stroke:Math.abs(v)<1e-9?"#9a9994":"#e6e5e0",lw:Math.abs(v)<1e-9?0.9:0.7}); items.push({t:"text",s:fmt(v),x:L-6,y:Y(v),size:10,anchor:"end",color:"#444"}); }
+  for(const tk of ticks(xmax,U)){ if(tk.u<-1e-9) continue; const px=X(tk.u); items.push({t:"line",pts:[[px,T+ph],[px,T+ph+4]],lw:0.8,stroke:"#444"}); items.push({t:"text",s:tk.s,x:px,y:T+ph+13,size:10,anchor:"middle",color:"#444"}); }
+  for(const qv of [1,2]){ items.push({t:"line",pts:[[X(qv),T],[X(qv),T+ph]],stroke:"#cfcec8",lw:0.7,dash:[3,3]}); }
+  items.push({t:"line",pts:[[L,T+ph],[L+pw,T+ph]],stroke:"#444",lw:0.8});
+  items.push({t:"line",pts:[[L,T],[L,T+ph]],stroke:"#444",lw:0.8});
+  items.push({t:"text",s:`|Q_p| (${U.lab})`+($("prof").value==="radial"?", radial average":`, along ${fmt(+$("pang").value||0)}°`),x:L+pw/2,y:Hh-12,size:11,anchor:"middle"});
+  items.push({t:"text",s:opt.ylab||"NN-CTF η(Q_p)",x:16,y:T+ph/2,size:11,anchor:"middle",rot:-90});
+  const clip=[L,T-2,pw,ph+4];
+  for(const c of on){ const pts=pr.x.map((q,i)=>[X(q),Y(val(c,i))]); items.push({t:"line",pts,stroke:c.color,lw:c.lw||2,dash:c.dash,clip}); }
+  // legend inside plot, top-right
+  const nm=c=>curveName(c,opt.name?opt.name(c):c.name);
+  mctx.font=`10px ${FONT}`; const tw=Math.max(40,...on.map(c=>mctx.measureText(nm(c).replace(/[_^{}]/g,"")).width));
+  const lw=tw+34, lx=L+pw-lw+4, ly=T+8; items.push({t:"rect",x:lx-6,y:ly-8,w:lw,h:on.length*15+6,fill:"rgba(255,255,255,0.88)"});
+  on.forEach((c,i)=>{ const yy=ly+i*15; items.push({t:"line",pts:[[lx,yy],[lx+20,yy]],stroke:c.color,lw:c.lw||2,dash:c.dash}); items.push({t:"text",s:nm(c),x:lx+26,y:yy,size:10}); });
+  return {w:W,h:Hh,items,val,plot:{L,T,pw,ph,xmax,ymin,ymax,X,Y}};
+}
+function drawCombined(){
+  if(!S.comb) return;
+  const O=S.O, U=unitInfo(O), C=S.comb, key=$("cmap").value, arr=C.out[key];
+  let vm=0; for(const v of arr) vm=Math.max(vm,Math.abs(v));
+  const signed = key==="bfRe", vmax = $("cscale").value==="fixed"? 2 : (vm>1e-9? vm: 1);
+  const mode = signed? "re":"abs", img=toCanvas(arr,null,C.Sq,mode,vmax);
+  const name = {sl:"self-luminous limit",pm:"acBF",tc:"tcBF",com:"iCoM / DPC",bfRe:"BF (signed)",bf:"BF |ΣT|/N",abf:"ABF"}[key];
+  const E=C.Lq/C.M, circles = $("ovl").checked? [{x:0,y:0,r:1,dash:[4,3],lw:0.9},{x:0,y:0,r:2,dash:[4,3],lw:0.9}] : [];
+  S.map = panelFig([{img,title:"NN-CTF η(Q_p): "+curveName({key},name),circles,smooth:true}],{P:Math.max(220,+$("P").value+70),cols:1,E,U,ovc:"rgba(0,0,0,0.5)",ovt:"#222",labels:false,xlab:"Q_{p,x}",ylab:"Q_{p,y}",cbar:{mode,vmax,label:signed?"η (signed)":"η"}});
+  drawFig(S.map,$("cvMap"),window.devicePixelRatio||1);
+  S.prof=profiles(); S.plot=plotFig(S.prof,U);
+  drawFig(S.plot,$("cvPlot"),window.devicePixelRatio||1);
+  S.dqe=plotFig(S.prof,U,{val:dqeVal(S.prof),ylab:"DQE(Q_p) = η^{2}/4",ymaxMin:0.1,name:c=>c.key==="bfRe"?"BF":c.name});
+  drawFig(S.dqe,$("cvDqe"),window.devicePixelRatio||1);
+}
+
+// ---------------------------------------------------------------- hover / click
+const tip=$("tip");
+function showTip(e,html){ tip.innerHTML=html; tip.style.display="block"; const W=tip.offsetWidth, x=e.clientX+14+W>innerWidth? e.clientX-14-W : e.clientX+14; tip.style.left=x+"px"; tip.style.top=(e.clientY+14)+"px"; }
+function hideTip(){ tip.style.display="none"; }
+function figCoords(cv,fig,e){ const r=cv.getBoundingClientRect(); const sx=fig.w/r.width; const px=(e.clientX-r.left)*sx, py=(e.clientY-r.top)*sx;
+  for(const h of fig.hits||[]){ if(px>=h.x&&px<=h.x+h.w&&py>=h.y&&py<=h.y+h.h){ return {h, u:-h.E+(px-h.x)/h.w*2*h.E, v:h.E-(py-h.y)/h.h*2*h.E}; } } return null; }
+const c2s=(t)=>`${t[0].toFixed(3)} ${t[1]<0?"−":"+"} ${Math.abs(t[1]).toFixed(3)}i &nbsp; |T| = ${Math.hypot(t[0],t[1]).toFixed(3)}, arg = ${(Math.atan2(t[1],t[0])*180/Math.PI).toFixed(0)}°`;
+const pstr=(x,y)=>{ const U=unitInfo(S.O); return `(${fmt(x*U.f)}, ${fmt(y*U.f)})${U.lab==="K_{max}"?" K<sub>max</sub>":U.lab==="Å^{−1}"?" Å⁻¹":" mrad"}`; };
+function hookRow(id,kind){
+  const cv=$(id);
+  cv.addEventListener("mousemove",e=>{ const fig=kind==="det"?S.det:S.vbf, r=figCoords(cv,fig,e); if(!r){hideTip();return;}
+    const comp=+$("comp").value, p=(kind==="det"?S.qpts:S.kpts)[r.h.idx];
+    const t = kind==="det"? Tpoint(r.u,r.v,p.x,p.y,S.O,comp,0) : Tpoint(p.x,p.y,r.u,r.v,S.O,comp,0);
+    const Kf=kind==="det"?[r.u,r.v]:[p.x,p.y], Qp=kind==="det"?[p.x,p.y]:[r.u,r.v];
+    showTip(e,`K<sub>f</sub> = ${pstr(...Kf)}<br>Q<sub>p</sub> = ${pstr(...Qp)}<br>T = ${c2s(t)}<br><span style="opacity:.7">click: add ${kind==="det"?"this K<sub>f</sub> to the vBF series":"this Q<sub>p</sub> to the detector series"}</span>`); });
+  cv.addEventListener("mouseleave",hideTip);
+  cv.addEventListener("click",e=>{ const fig=kind==="det"?S.det:S.vbf, r=figCoords(cv,fig,e); if(!r) return;
+    addPoint(kind==="det"?"klist":"qlist", r.u, r.v); });
+}
+function addPoint(id,u,v){ const el=$(id); const s=`(${u.toFixed(2)}, ${v.toFixed(2)})`; el.value = el.value.trim()? el.value.trim().replace(/[,;]\s*$/,"")+", "+s : s; schedule(); }
+hookRow("cvDet","det"); hookRow("cvVbf","vbf");
+$("cvMap").addEventListener("mousemove",e=>{ if(!S.comb||!S.map) return; const r=figCoords($("cvMap"),S.map,e); if(!r){hideTip();return;}
+  const C=S.comb, i=Math.round(r.u*C.M)+C.Lq, j=C.Lq-Math.round(r.v*C.M); if(i<0||j<0||i>=C.Sq||j>=C.Sq){hideTip();return;}
+  const k=j*C.Sq+i; showTip(e,`Q<sub>p</sub> = ${pstr(r.u,r.v)}<br>`+CURVES.map(c=>`${c.name}: ${C.out[c.key][k].toFixed(3)}`).join("<br>")+`<br><span style="opacity:.7">click: add Q<sub>p</sub> to the detector series</span>`); });
+$("cvMap").addEventListener("mouseleave",hideTip);
+$("cvMap").addEventListener("click",e=>{ if(!S.map) return; const r=figCoords($("cvMap"),S.map,e); if(r) addPoint("qlist",r.u,r.v); });
+function dqeVal(pr){ return (c,i)=>{ const v=pr.y[c.key==="bfRe"?"bf":c.key][i]; return v*v/4; }; }
+function hookPlot(cvId,xhId,getFig,label){
+  const cv=$(cvId), xh=$(xhId);
+  cv.addEventListener("mousemove",e=>{ const F=getFig(); if(!F||!S.prof) return; const rc=cv.getBoundingClientRect(), sc=F.w/rc.width, px=(e.clientX-rc.left)*sc, pl=F.plot;
+    if(px<pl.L||px>pl.L+pl.pw){ xh.style.display="none"; hideTip(); return; }
+    const q=(px-pl.L)/pl.pw*pl.xmax; let bi=0, bd=1e9; S.prof.x.forEach((x,i)=>{ const d=Math.abs(x-q); if(d<bd){bd=d;bi=i;} });
+    const qx=S.prof.x[bi], X=pl.X(qx)/sc; xh.style.display="block"; xh.style.left=(cv.offsetLeft+X)+"px"; xh.style.top=(cv.offsetTop+pl.T/sc)+"px"; xh.style.height=(pl.ph/sc)+"px";
+    const U=unitInfo(S.O);
+    showTip(e,`|Q<sub>p</sub>| = ${fmt(qx*U.f)} ${U.lab==="K_{max}"?"K<sub>max</sub>":U.lab==="Å^{−1}"?"Å⁻¹":"mrad"} &nbsp;(${label})<br>`+CURVES.filter(c=>c.on).map(c=>`<span class="sw" style="background:${c.color};vertical-align:middle"></span> ${c.name}: ${F.val(c,bi).toFixed(3)}`).join("<br>")); });
+  cv.addEventListener("mouseleave",()=>{ xh.style.display="none"; hideTip(); });
+}
+hookPlot("cvPlot","xhair",()=>S.plot,"NN-CTF η");
+hookPlot("cvDqe","xhair2",()=>S.dqe,"DQE");
+
+// ---------------------------------------------------------------- export
+function openModal(title,hint,bodyEl,btns){ $("mTitle").textContent=title; $("mHint").innerHTML=hint; const b=$("mBody"); b.innerHTML=""; b.appendChild(bodyEl); const bb=$("mBtns"); bb.innerHTML=""; btns.forEach(x=>bb.appendChild(x)); $("modal").style.display="flex"; }
+$("mClose").onclick=()=>{ $("modal").style.display="none"; };
+$("modal").addEventListener("click",e=>{ if(e.target.id==="modal") $("modal").style.display="none"; });
+function mkBtn(label,fn,primary){ const b=document.createElement("button"); b.textContent=label; if(primary) b.className="primary"; b.onclick=fn; return b; }
+let DL=null;
+(async()=>{ try{ if(window.claude && typeof window.claude.use==="function") DL=await window.claude.use("downloads"); }catch(e){ DL=null; } })();
+async function saveFile(name,data,btn){
+  if(DL){ try{ await DL.save({filename:name,data}); if(btn) btn.textContent="Saved"; }
+    catch(e){ if(btn) btn.textContent = (e&&e.code==="declined")? "Declined" : (e&&e.code==="rate_limited")? "Busy, try again" : "Save unavailable: right-click the preview"; }
+    return; }
+  try{ const blob = data instanceof Blob? data : new Blob([data]); const url=URL.createObjectURL(blob);
+    const a=document.createElement("a"); a.href=url; a.download=name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),4000); }catch(e){}
+}
+function copyText(txt,btn){ (navigator.clipboard? navigator.clipboard.writeText(txt) : Promise.reject()).then(()=>{ btn.textContent="Copied"; },()=>{ btn.textContent="Copy failed: select the text instead"; }); }
+const FIGS = { cvDet:()=>S.det, cvVbf:()=>S.vbf, cvMap:()=>S.map, cvPlot:()=>S.plot, cvDqe:()=>S.dqe };
+const NAMES = { cvDet:"ptycho_ctf_detector_space", cvVbf:"ptycho_ctf_vBF_space", cvMap:"ptycho_ctf_combined_map", cvPlot:"ptycho_ctf_transfer", cvDqe:"ptycho_ctf_DQE" };
+document.querySelectorAll("[data-exp]").forEach(b=>b.addEventListener("click",()=>{
+  const fig=FIGS[b.dataset.exp](); if(!fig) return; const name=NAMES[b.dataset.exp];
+  if(b.dataset.fmt==="pdf"){ exportPDF([fig],name+".pdf"); return; }
+  if(b.dataset.fmt==="png"){
+    const cv=document.createElement("canvas"); drawFig(fig,cv,4); const url=cv.toDataURL("image/png");
+    const img=new Image(); img.src=url; let db;
+    db=mkBtn("Download PNG",()=>cv.toBlob(bl=>saveFile(name+".png",bl,db),"image/png"),true);
+    openModal("PNG export (4× resolution)",`${cv.width} × ${cv.height} px. You can also right-click the image and choose <i>Save image as…</i>`,img,[db]);
+  } else {
+    const svg=figSVG(fig), url="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg), img=new Image(); img.src=url;
+    let cb; cb=mkBtn("Copy SVG source",()=>copyText(svg,cb));
+    let db; db=mkBtn("Download SVG",()=>saveFile(name+".svg",new Blob([svg],{type:"image/svg+xml"}),db),true);
+    openModal("SVG export (vector text and outlines, embedded maps)",`Opens in Illustrator or Inkscape. You can also copy the source.`,img,[db,cb]);
+  }
+}));
+$("csv").addEventListener("click",()=>{ if(!S.prof) return; const U=unitInfo(S.O);
+  const lines=[`# ptychographic CTF profiles; ${S.O.kV} kV, alpha=${S.O.alphaMrad} mrad, C1=${$("C1").value} nm; ${$("prof").value==="radial"?"radial average":"line at "+$("pang").value+" deg"}`,
+    ["q_"+U.lab.replace(/[_{}^]/g,""),...CURVES.map(c=>"eta_"+c.key),...CURVES.filter(c=>c.key!=="bfRe").map(c=>"dqe_"+c.key)].join(",")];
+  const dv=dqeVal(S.prof);
+  S.prof.x.forEach((q,i)=>lines.push([ (q*U.f).toPrecision(5), ...CURVES.map(c=>S.prof.y[c.key][i].toPrecision(5)), ...CURVES.filter(c=>c.key!=="bfRe").map(c=>dv(c,i).toPrecision(5))].join(",")));
+  const txt=lines.join("\n"), ta=document.createElement("textarea"); ta.value=txt; let cb, db; cb=mkBtn("Copy CSV",()=>copyText(txt,cb)); db=mkBtn("Download CSV",()=>saveFile("ptycho_ctf_profiles.csv",txt,db),true);
+  openModal("Profiles as CSV","Columns: eta_* = noise-normalized transfer, dqe_* = eta²/4. Keys: pm acBF, sl self-luminous limit, tc tcBF, com iCoM, bfRe BF signed, bf BF magnitude, abf ABF.",ta,[db,cb]); });
+
+
+// ---------------------------------------------------------------- PDF (vector; Helvetica + Symbol base-14 fonts)
+const WIN_EXTRA={"–":0x96,"—":0x97,"‘":0x91,"’":0x92,"“":0x93,"”":0x94,"•":0x95,"…":0x85};
+const SYMB={"α":0x61,"β":0x62,"γ":0x67,"δ":0x64,"ε":0x65,"η":0x68,"θ":0x71,"κ":0x6B,"λ":0x6C,"μ":0x6D,"π":0x70,"ρ":0x72,"σ":0x73,"τ":0x74,"φ":0x66,"χ":0x63,"ψ":0x79,"ω":0x77,
+  "Σ":0x53,"Δ":0x44,"Φ":0x46,"Ψ":0x59,"Ω":0x57,"Θ":0x51,"√":0xD6,"∠":0xD0,"≤":0xA3,"≥":0xB3,"−":0x2D,"∞":0xA5,"∇":0xD1,"↔":0xAB};
+function pdfSegs(str){ const out=[];
+  for(const ch of str){ const u=ch.codePointAt(0); let f=1, c=63;
+    if((u>=0x20&&u<0x7F)||(u>=0xA0&&u<=0xFF)) c=u; else if(WIN_EXTRA[ch]) c=WIN_EXTRA[ch]; else if(SYMB[ch]!==undefined){ f=2; c=SYMB[ch]; }
+    const l=out[out.length-1]; if(l&&l.f===f){ l.codes.push(c); l.text+=ch; } else out.push({f,codes:[c],text:ch}); }
+  return out; }
+const pdfStr = codes => "("+codes.map(c=> (c===40||c===41||c===92)? "\\"+String.fromCharCode(c) : (c<32||c>126)? "\\"+c.toString(8).padStart(3,"0") : String.fromCharCode(c)).join("")+")";
+function pcol(st){ if(!st||st==="none") return null; let m=/^#([0-9a-f]{6})$/i.exec(st); if(m){ const v=parseInt(m[1],16); return [(v>>16&255)/255,(v>>8&255)/255,(v&255)/255,1]; }
+  m=/rgba?\(([^)]+)\)/.exec(st); if(m){ const q=m[1].split(",").map(Number); return [q[0]/255,q[1]/255,q[2]/255,q.length>3?q[3]:1]; } return [0,0,0,1]; }
+async function deflate(u8){ try{ if(typeof CompressionStream==="undefined") return null; const st=new Blob([u8]).stream().pipeThrough(new CompressionStream("deflate")); return new Uint8Array(await new Response(st).arrayBuffer()); }catch(e){ return null; } }
+const mctx=document.createElement("canvas").getContext("2d");
+async function figsPDF(figs){
+  const n=v=>(+v.toFixed(3)).toString(), enc=new TextEncoder(), objs=[];
+  const add=o=>{ objs.push(o); return objs.length; };
+  const F1=add({d:"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>"});
+  const F2=add({d:"<< /Type /Font /Subtype /Type1 /BaseFont /Symbol >>"});
+  const PAGES=add(null), kids=[], imgCache=new Map();
+  for(const fig of figs){
+    const H=fig.h, ops=[], xo={}, gs={};
+    const alpha=(a,kind)=>{ if(a>=1) return ""; const k=(kind+Math.round(a*100)); gs[k]=`<< /${kind==="s"?"CA":"ca"} ${n(a)} >>`; return `/${k} gs `; };
+    for(const it of fig.items){
+      ops.push("q");
+      if(it.clip) ops.push(`${n(it.clip[0])} ${n(H-it.clip[1]-it.clip[3])} ${n(it.clip[2])} ${n(it.clip[3])} re W n`);
+      const sc=pcol(it.stroke||"#333333");
+      const strokeSet=()=>{ ops.push(`${alpha(sc[3],"s")}${n(sc[0])} ${n(sc[1])} ${n(sc[2])} RG ${n(it.lw||1)} w [${(it.dash||[]).map(n).join(" ")}] 0 d 1 J 1 j`); };
+      if(it.t==="img"){
+        let id=imgCache.get(it.src);
+        if(!id){ const c=it.src, w=c.width, h=c.height, d=c.getContext("2d").getImageData(0,0,w,h).data, rgb=new Uint8Array(w*h*3);
+          for(let i=0;i<w*h;i++){ const a=d[4*i+3]/255; for(let k=0;k<3;k++) rgb[3*i+k]=Math.round(d[4*i+k]*a+255*(1-a)); }
+          const z=await deflate(rgb);
+          id=add({d:`<< /Type /XObject /Subtype /Image /Width ${w} /Height ${h} /ColorSpace /DeviceRGB /BitsPerComponent 8 ${it.smooth===false?"":"/Interpolate true "}${z?"/Filter /FlateDecode ":""}/Length ${(z||rgb).length} >>`, s:z||rgb});
+          imgCache.set(it.src,id); }
+        xo["Im"+id]=id; ops.push(`${n(it.w)} 0 0 ${n(it.h)} ${n(it.x)} ${n(H-it.y-it.h)} cm /Im${id} Do`);
+      } else if(it.t==="rect"){
+        if(it.fill){ const fc=pcol(it.fill); ops.push(`${alpha(fc[3],"f")}${n(fc[0])} ${n(fc[1])} ${n(fc[2])} rg ${n(it.x)} ${n(H-it.y-it.h)} ${n(it.w)} ${n(it.h)} re f`); }
+        if(it.stroke){ strokeSet(); ops.push(`${n(it.x)} ${n(H-it.y-it.h)} ${n(it.w)} ${n(it.h)} re S`); }
+      } else if(it.t==="line"){
+        strokeSet(); ops.push(it.pts.map((q,i)=>`${n(q[0])} ${n(H-q[1])} ${i?"l":"m"}`).join(" ")+" S");
+      } else if(it.t==="circle"){
+        strokeSet(); const cx=it.cx, cy=H-it.cy, r=it.r, k=0.5522847*r;
+        ops.push(`${n(cx+r)} ${n(cy)} m ${n(cx+r)} ${n(cy+k)} ${n(cx+k)} ${n(cy+r)} ${n(cx)} ${n(cy+r)} c ${n(cx-k)} ${n(cy+r)} ${n(cx-r)} ${n(cy+k)} ${n(cx-r)} ${n(cy)} c ${n(cx-r)} ${n(cy-k)} ${n(cx-k)} ${n(cy-r)} ${n(cx)} ${n(cy-r)} c ${n(cx+k)} ${n(cy-r)} ${n(cx+r)} ${n(cy-k)} ${n(cx+r)} ${n(cy)} c S`);
+      } else if(it.t==="text"){
+        const fs=it.size||11, fc=pcol(it.color||"#222222"), phi=-(it.rot||0)*Math.PI/180, cs=Math.cos(phi), sn=Math.sin(phi);
+        const parts=[]; let W=0;
+        for(const r of runs(it.s)){ const sz=r.sh?fs*0.72:fs, dy=r.sh<0?0.28*fs:r.sh>0?-0.42*fs:0;
+          for(const sg of pdfSegs(r.t)){ mctx.font=`${it.bold?"600 ":""}${sz}px ${FONT}`; const w=mctx.measureText(sg.text).width; parts.push({sg,sz,dy,w}); W+=w; } }
+        let lx = it.anchor==="middle"? -W/2 : it.anchor==="end"? -W : 0;
+        ops.push(`${alpha(fc[3],"f")}${n(fc[0])} ${n(fc[1])} ${n(fc[2])} rg BT`);
+        for(const pt of parts){ const ly=-(0.35*fs+pt.dy), px=it.x+lx*cs-ly*sn, py=(H-it.y)+lx*sn+ly*cs;
+          ops.push(`/F${pt.sg.f} ${n(pt.sz)} Tf ${n(cs)} ${n(sn)} ${n(-sn)} ${n(cs)} ${n(px)} ${n(py)} Tm ${pdfStr(pt.sg.codes)} Tj`); lx+=pt.w; }
+        ops.push("ET");
+      }
+      ops.push("Q");
+    }
+    const content=enc.encode(["1 1 1 rg 0 0 "+n(fig.w)+" "+n(H)+" re f",...ops].join("\n"));
+    const cz=await deflate(content);
+    const cid=add({d:`<< ${cz?"/Filter /FlateDecode ":""}/Length ${(cz||content).length} >>`, s:cz||content});
+    const res=`<< /Font << /F1 ${F1} 0 R /F2 ${F2} 0 R >> /XObject << ${Object.entries(xo).map(([k,v])=>`/${k} ${v} 0 R`).join(" ")} >> /ExtGState << ${Object.entries(gs).map(([k,v])=>`/${k} ${v}`).join(" ")} >> >>`;
+    kids.push(add({d:`<< /Type /Page /Parent ${PAGES} 0 R /MediaBox [0 0 ${n(fig.w)} ${n(H)}] /Resources ${res} /Contents ${cid} 0 R >>`}));
+  }
+  objs[PAGES-1]={d:`<< /Type /Pages /Kids [${kids.map(k=>k+" 0 R").join(" ")}] /Count ${kids.length} >>`};
+  const cat=add({d:`<< /Type /Catalog /Pages ${PAGES} 0 R >>`});
+  const info=add({d:`<< /Title (C3P-0 figure) /Producer (C3P-0: Claude's CTF Code for Ptychography in the weak-phase limit) >>`});
+  const chunks=[], offs=[]; let len=0; const push=u=>{ chunks.push(u); len+=u.length; };
+  push(new Uint8Array([37,80,68,70,45,49,46,52,10,37,226,227,207,211,10]));   // %PDF-1.4 + binary comment
+  objs.forEach((o,i)=>{ offs.push(len); push(enc.encode(`${i+1} 0 obj\n${o.d}\n`)); if(o.s){ push(enc.encode("stream\n")); push(o.s); push(enc.encode("\nendstream\n")); } push(enc.encode("endobj\n")); });
+  const xref=len; let x=`xref\n0 ${objs.length+1}\n0000000000 65535 f \n`; for(const o of offs) x+=String(o).padStart(10,"0")+" 00000 n \n";
+  push(enc.encode(x+`trailer\n<< /Size ${objs.length+1} /Root ${cat} 0 R /Info ${info} 0 R >>\nstartxref\n${xref}\n%%EOF\n`));
+  const out=new Uint8Array(len); let o=0; for(const c of chunks){ out.set(c,o); o+=c.length; } return out;
+}
+async function exportPDF(figs,name){
+  figs=figs.filter(Boolean); if(!figs.length) return;
+  const bytes=await figsPDF(figs), blob=new Blob([bytes],{type:"application/pdf"});
+  const info=document.createElement("div"); info.className="hint";
+  info.innerHTML=`${figs.length} page${figs.length>1?"s":""}, ${(bytes.length/1024).toFixed(0)} KB. Lines, outlines and text are vector (Helvetica and Symbol); the maps are embedded images at the sampling set in the sidebar. Raise <i>Samples per panel</i> for sharper maps.`;
+  let db; db=mkBtn("Download PDF",()=>saveFile(name,blob,db),true);
+  openModal("PDF export","",info,[db]);
+  S.lastPDF=bytes;
+}
+$("pdfAll").addEventListener("click",()=>exportPDF([S.plot,S.dqe,S.map,S.det,S.vbf],"ptycho_ctf_figures.pdf"));
+// ---------------------------------------------------------------- presets & wiring
+const PRESETS = {
+  focus:{C1:0}, u10:{C1:-10}, u20:{C1:-20}, o10:{C1:10},
+  astig:{C1:0,A1:5}, coma:{C1:0,B2:200}, three:{C1:0,A2:200},
+};
+$("preset").addEventListener("change",()=>{
+  const v=$("preset").value; if(!v) return;
+  for(const id of ["C1","A1","B2","A2","C3","A3","C5"]) $(id).value=0;
+  if(v==="scherzer"){ const lam=lambdaA(+$("kV").value||300), C3=1.2e7; $("C3").value=1200; $("C1").value=(-Math.sqrt(4/3*C3*lam)/10).toFixed(1); $("alpha").value=(1e3*Math.pow(4*lam/C3,0.25)).toFixed(1); }
+  else for(const [k,val] of Object.entries(PRESETS[v])) $(k).value=val;
+  schedule();
+});
+["C1","A1","A1a","B2","B2a","A2","A2a","C3","A3","A3a","C5","kV","alpha"].forEach(id=>$(id).addEventListener("input",()=>{ if(id!=="kV"&&id!=="alpha") $("preset").value=""; }));
+let tRows=0, tComb=0;
+function schedule(rowsOnly){ clearTimeout(tRows); tRows=setTimeout(()=>{ computeRows(); if(!rowsOnly){ clearTimeout(tComb); tComb=setTimeout(computeCombined,200);} else drawCombined(); },60); }
+const physIds=["kV","alpha","C1","A1","A1a","B2","B2a","A2","A2a","C3","A3","A3a","C5","dfs","src","M","inner","bfR"];
+physIds.forEach(id=>$(id).addEventListener("input",()=>schedule(false)));
+["mode","comp","scale","units","N","P","cols","ovl","ovlab","qlist","qang","klist","kang"].forEach(id=>$(id).addEventListener("input",()=>schedule(true)));
+["cmap","prof","pang","cscale"].forEach(id=>$(id).addEventListener("input",()=>{ updateCtlVis(); drawCombined(); }));
+$("qclear").onclick=()=>{ $("qlist").value=""; schedule(true); };
+$("kclear").onclick=()=>{ $("klist").value=""; schedule(true); };
+buildToggles(); updateCtlVis();
+computeRows(); computeCombined();
+</script>
+</body>
+</html>
