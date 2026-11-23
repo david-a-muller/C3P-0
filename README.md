@@ -18,6 +18,7 @@ The page shows four views:
 
 - **Noise-normalized CTF (NN-CTF).** Line or radially averaged profiles of η(**Q**<sub>p</sub>) and DQE(**Q**<sub>p</sub>) = η²/4, plotted for each reconstruction:
   - acBF
+  - SSB
   - tcBF
   - iCoM/DPC
   - BF, with an adjustable detector radius β
@@ -60,7 +61,16 @@ The combined transfer of a reconstruction with pixel weights *w* is the noise-no
 | ABF | 1 on an annulus |
 | iCoM/DPC | **K**<sub>f</sub>·**Q̂**<sub>p</sub> |
 | tcBF | exp[−i∇χ·**Q**<sub>p</sub>] |
-| acBF | exp[−i arg *T*] on the overlap support |
+| SSB | exp[−i arg *T*] on the double-overlap lunes only |
+| acBF | exp[−i arg *T*] |
+
+Three noise models set which pixels add noise at each **Q**<sub>p</sub>:
+
+- **None: flat NPS** (default, as in Ma et al. [1]): every weighted pixel's vBF image carries white Poisson noise, so Σ|*w*|² runs over all weighted pixels. The self-luminous limit is then η = 2𝔸(**Q**<sub>p</sub>), the ADF-like aperture autocorrelation, and tcBF peaks reach it.
+- **vBF mask, single + double sideband**: each pixel's image is first masked to its two sideband disks, so only pixels in the overlap support at that **Q**<sub>p</sub> add noise. This raises tcBF and acBF above α by removing noise from pixels that carry no signal there.
+- **vBF mask, single sideband only**: each pixel's image keeps only the regions where one sideband is present. These are exactly the double-overlap lunes in detector space, so acBF with this mask is identical to SSB.
+
+Detector space and vBF space are slices of the same 4D support: single sideband ↔ double overlap, double sideband ↔ triple overlap. The noise model applies to tcBF and acBF. BF, ABF and iCoM/DPC integrate detector signals, and SSB always uses only the double-overlap lunes, so the switch does not change them.
 
 An ideal Zernike phase plate has η = 2, so DQE = η²/4. The theory section on the page gives the full derivations and the self-luminous limit.
 
